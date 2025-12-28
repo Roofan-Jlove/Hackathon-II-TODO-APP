@@ -108,19 +108,19 @@ def add_todo(title: str, description: str | None) -> tuple[bool, int | None, str
 
 def get_all_todos() -> list[dict]:
     """
-    Retrieve all todos sorted by ID ascending (Phase II enhanced with migration).
+    Retrieve all todos sorted by ID ascending (Phase III enhanced with migration).
 
     Returns:
         list[dict]: List of all todo dictionaries, sorted by ID ascending
             Returns empty list if no todos exist
-            All todos guaranteed to have Phase II fields (priority, tags, created_at)
+            All todos guaranteed to have Phase III fields (priority, tags, created_at, recurrence)
 
     Sorting Rules:
         - Per CLI contract (line 110): Todos displayed in ID ascending order
         - Ensures consistent display order regardless of insertion order
 
-    Migration Behavior (Phase II):
-        - Automatically migrates Phase I todos to Phase II format
+    Migration Behavior (Phase III):
+        - Automatically migrates Phase I/II todos to Phase III format
         - Migration is transparent and idempotent
         - Modifies global todos list in-place to persist migration
 
@@ -134,16 +134,17 @@ def get_all_todos() -> list[dict]:
         1
         >>> todos[1]['id']
         2
-        >>> todos[0]['priority']  # Phase II field
-        'Medium'
+        >>> todos[0]['recurrence_pattern']  # Phase III field
+        None
     """
-    from models import migrate_todo_to_phase2
+    from models import migrate_todo_to_phase2, migrate_todo_to_phase3
 
-    # Migrate all todos to Phase II format in-place (idempotent)
-    # This ensures backward compatibility with Phase I todos
+    # Migrate all todos to Phase III format in-place (idempotent)
+    # This ensures backward compatibility with Phase I and Phase II todos
     global todos
     for i in range(len(todos)):
-        todos[i] = migrate_todo_to_phase2(todos[i])
+        todos[i] = migrate_todo_to_phase2(todos[i])  # Phase I → Phase II
+        todos[i] = migrate_todo_to_phase3(todos[i])  # Phase II → Phase III
 
     # Return sorted copy (sort by 'id' key ascending)
     return sorted(todos, key=lambda todo: todo["id"])
@@ -192,7 +193,7 @@ def get_todo_by_id(todo_id: any) -> dict | None:
 
 def mark_complete(todo_id: any) -> tuple[bool, str]:
     """
-    Mark a todo as complete.
+    Mark a todo as complete (Phase III enhanced with recurring tasks).
 
     Args:
         todo_id: ID of todo to mark complete (any type, will be validated)
@@ -206,6 +207,7 @@ def mark_complete(todo_id: any) -> tuple[bool, str]:
         - Sets completed=True on the todo
         - Idempotent: marking already-complete todo succeeds
         - Validates ID and checks existence before modifying
+        - Phase III: If todo has recurrence pattern, creates next instance
 
     Error Messages (from CLI contract):
         - Invalid ID: "Error: ID must be a positive integer."
@@ -213,6 +215,7 @@ def mark_complete(todo_id: any) -> tuple[bool, str]:
 
     Success Message (from CLI contract):
         - "Todo ID {id} marked as complete!"
+        - Phase III: "Todo ID {id} marked as complete! Next occurrence created (ID: {new_id})."
 
     Examples:
         >>> add_todo("Buy groceries", "")
@@ -224,7 +227,9 @@ def mark_complete(todo_id: any) -> tuple[bool, str]:
         >>> mark_complete(999)
         (False, "Error: Todo with ID 999 not found.")
     """
-    from models import validate_id
+    from models import validate_id, create_todo
+    from datetime import datetime
+    global next_id
 
     # Validate ID
     valid, parsed_id, error = validate_id(todo_id)
@@ -239,7 +244,34 @@ def mark_complete(todo_id: any) -> tuple[bool, str]:
     # Mark as complete (idempotent - no check if already complete)
     todo["completed"] = True
 
-    # Return success
+    # Phase III: Handle recurring tasks
+    recurrence_pattern = todo.get("recurrence_pattern")
+    if recurrence_pattern is not None and recurrence_pattern in ["Daily", "Weekly", "Monthly"]:
+        # Calculate next occurrence
+        interval = todo.get("recurrence_interval", 1)
+        base_date = datetime.now()
+        next_date = calculate_next_occurrence(base_date, recurrence_pattern, interval)
+
+        # Create new instance of the recurring todo
+        new_id = next_id
+        new_todo = create_todo(
+            new_id,
+            todo["title"],
+            todo["description"],
+            priority=todo.get("priority", "Medium"),
+            tags=todo.get("tags", []).copy(),  # Copy tags list
+            recurrence_pattern=recurrence_pattern,
+            recurrence_interval=interval
+        )
+        new_todo["next_occurrence"] = next_date
+
+        # Add to global list and increment counter
+        todos.append(new_todo)
+        next_id += 1
+
+        return (True, f"Todo ID {parsed_id} marked as complete! Next occurrence created (ID: {new_id}).")
+
+    # Return success (non-recurring todo)
     return (True, f"Todo ID {parsed_id} marked as complete!")
 
 
@@ -863,3 +895,83 @@ def sort_by_status(todos: list[dict], incomplete_first: bool = True) -> list[dic
     # If incomplete_first=True: incomplete (0) comes before complete (1)
     # If incomplete_first=False: complete (1) comes before incomplete (0) → reverse
     return sorted(todos, key=lambda todo: todo["completed"], reverse=not incomplete_first)
+
+
+def set_recurrence(todo_id: any, pattern: str, interval: int = 1) -> tuple[bool, str]:
+    """
+    Set recurrence pattern for an existing todo (Phase III - User Story 9).
+
+    Args:
+        todo_id: ID of todo to update
+        pattern: Recurrence pattern ("None", "Daily", "Weekly", "Monthly")
+        interval: Recurrence interval (default 1)
+
+    Returns:
+        tuple: (success, message)
+
+    Examples:
+        >>> set_recurrence(1, "Daily")
+        (True, "Todo ID 1 recurrence set to Daily!")
+        >>> set_recurrence(1, "None")
+        (True, "Todo ID 1 recurrence removed!")
+    """
+    from models import validate_id, validate_recurrence_pattern
+
+    # Validate ID
+    valid, parsed_id, error = validate_id(todo_id)
+    if not valid:
+        return (False, error)
+
+    # Get todo
+    todo = get_todo_by_id(parsed_id)
+    if todo is None:
+        return (False, f"Error: Todo with ID {parsed_id} not found.")
+
+    # Validate recurrence pattern
+    pattern_valid, normalized_pattern, pattern_error = validate_recurrence_pattern(pattern)
+    if not pattern_valid:
+        return (False, pattern_error)
+
+    # Set recurrence
+    todo["recurrence_pattern"] = normalized_pattern
+    todo["recurrence_interval"] = interval if normalized_pattern is not None else 1
+    todo["next_occurrence"] = None  # Will be calculated when needed
+
+    # Return success message
+    if normalized_pattern is None:
+        return (True, f"Todo ID {parsed_id} recurrence removed!")
+    else:
+        return (True, f"Todo ID {parsed_id} recurrence set to {normalized_pattern}!")
+
+
+def calculate_next_occurrence(base_date, pattern: str, interval: int = 1):
+    """
+    Calculate the next occurrence date based on recurrence pattern.
+
+    Args:
+        base_date: Starting date (datetime object)
+        pattern: Recurrence pattern ("Daily", "Weekly", "Monthly")
+        interval: Recurrence interval (default 1)
+
+    Returns:
+        datetime: Next occurrence date
+
+    Examples:
+        >>> from datetime import datetime
+        >>> base = datetime(2025, 1, 1)
+        >>> calculate_next_occurrence(base, "Daily", 1)
+        datetime(2025, 1, 2, ...)
+        >>> calculate_next_occurrence(base, "Weekly", 2)
+        datetime(2025, 1, 15, ...)
+    """
+    from datetime import timedelta
+    from dateutil.relativedelta import relativedelta
+
+    if pattern == "Daily":
+        return base_date + timedelta(days=interval)
+    elif pattern == "Weekly":
+        return base_date + timedelta(weeks=interval)
+    elif pattern == "Monthly":
+        return base_date + relativedelta(months=interval)
+    else:
+        return None

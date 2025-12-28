@@ -21,7 +21,7 @@ if sys.platform == "win32":
         sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'strict')
         sys.stderr = codecs.getwriter('utf-8')(sys.stderr.buffer, 'strict')
 
-from cli import display_menu, get_menu_choice, handle_add, handle_list, handle_mark_complete, handle_mark_incomplete, handle_update, handle_delete, handle_set_priority, handle_manage_tags, handle_search_filter, handle_sort
+from cli import display_menu, get_menu_choice, handle_add, handle_list, handle_mark_complete, handle_mark_incomplete, handle_update, handle_delete, handle_set_priority, handle_manage_tags, handle_search_filter, handle_sort, handle_set_recurrence
 from colorama import Fore, Style, init
 
 # Initialize colorama
@@ -30,10 +30,10 @@ init(autoreset=True)
 
 def main():
     """
-    Main application loop with Phase II enhanced menu.
+    Main application loop with Phase III enhanced menu.
 
     Displays menu, gets user choice, and dispatches commands.
-    Continues until user selects Exit (choice 11).
+    Continues until user selects Exit (choice 12).
 
     Menu Choices:
         1: Add Todo (handler in User Story 1)
@@ -46,7 +46,8 @@ def main():
         8: Manage Tags (handler in User Story 6 - Phase II)
         9: Search & Filter (handler in User Story 7 - Phase II)
         10: Sort (handler in User Story 8 - Phase II)
-        11: Exit
+        11: Set Recurrence (handler in User Story 9 - Phase III)
+        12: Exit
 
     Contract: Implements menu-driven loop pattern per research.md and CLI contract
     """
@@ -58,7 +59,7 @@ def main():
         choice = get_menu_choice()
 
         # Handle Exit
-        if choice == "11":
+        if choice == "12":
             print()
             print(Fore.CYAN + "👋 " + Fore.YELLOW + Style.BRIGHT + "Goodbye! Thanks for using TODO APP!" + Style.RESET_ALL)
             print(Fore.YELLOW + "⚠️  Note: All todos will be lost (in-memory only).")
@@ -66,8 +67,8 @@ def main():
             break
 
         # Handle invalid choices
-        elif choice not in ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]:
-            print(Fore.RED + "❌ Error: Invalid choice. Please enter 1-11.")
+        elif choice not in ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11"]:
+            print(Fore.RED + "❌ Error: Invalid choice. Please enter 1-12.")
 
         # User Story 1: Add and List handlers (MVP)
         elif choice == "1":
@@ -104,6 +105,10 @@ def main():
         # User Story 8: Sort handler (Phase II)
         elif choice == "10":
             handle_sort()
+
+        # User Story 9: Set Recurrence handler (Phase III)
+        elif choice == "11":
+            handle_set_recurrence()
 
 
 if __name__ == "__main__":

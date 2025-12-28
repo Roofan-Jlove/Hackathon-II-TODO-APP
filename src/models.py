@@ -312,10 +312,111 @@ def migrate_todo_to_phase2(todo: dict) -> dict:
     return migrated
 
 
-def create_todo(id: int, title: str, description: str,
-                priority: str = "Medium", tags: list[str] | None = None) -> dict:
+def migrate_todo_to_phase3(todo: dict) -> dict:
     """
-    Create a todo dictionary with validated fields (Phase II enhanced).
+    Migrate a Phase II todo to Phase III by adding recurrence fields.
+
+    This function is idempotent - it safely handles todos that already have Phase III fields.
+
+    Args:
+        todo: Todo dictionary (Phase II or Phase III format)
+
+    Returns:
+        dict: Todo with Phase III fields guaranteed to exist
+
+    Phase III Migration Rules:
+        - If "recurrence_pattern" missing: Add with default None
+        - If "recurrence_interval" missing: Add with default 1
+        - If "next_occurrence" missing: Add with default None
+        - All Phase I and Phase II fields preserved unchanged
+
+    Examples:
+        >>> phase2_todo = {"id": 1, "title": "Buy milk", "priority": "High", "tags": [], "created_at": ...}
+        >>> migrated = migrate_todo_to_phase3(phase2_todo)
+        >>> migrated["recurrence_pattern"]
+        None
+        >>> migrated["recurrence_interval"]
+        1
+        >>> migrated["next_occurrence"]
+        None
+    """
+    # Create new dict to avoid mutating input
+    migrated = todo.copy()
+
+    # Add Phase III fields with defaults if missing
+    if "recurrence_pattern" not in migrated:
+        migrated["recurrence_pattern"] = None
+
+    if "recurrence_interval" not in migrated:
+        migrated["recurrence_interval"] = 1
+
+    if "next_occurrence" not in migrated:
+        migrated["next_occurrence"] = None
+
+    return migrated
+
+
+def validate_recurrence_pattern(pattern: str | None) -> tuple[bool, str | None, str]:
+    """
+    Validate and normalize recurrence pattern (Phase III - User Story 9).
+
+    Args:
+        pattern: Recurrence pattern ("None", "Daily", "Weekly", "Monthly")
+                 Case-insensitive, will be normalized
+
+    Returns:
+        tuple: (valid, normalized_pattern, error_message)
+            - valid (bool): True if validation passed
+            - normalized_pattern (str | None): Normalized pattern if valid, None otherwise
+            - error_message (str): Error message if invalid, empty string if valid
+
+    Validation Rules:
+        - Must be one of: "None", "Daily", "Weekly", "Monthly" (case-insensitive)
+        - Leading/trailing whitespace is trimmed
+        - Normalized to proper case: "None", "Daily", "Weekly", "Monthly"
+        - "None" means no recurrence (treated as None internally)
+
+    Error Messages:
+        - Invalid pattern: "Error: Recurrence pattern must be None, Daily, Weekly, or Monthly."
+
+    Examples:
+        >>> validate_recurrence_pattern("daily")
+        (True, "Daily", "")
+        >>> validate_recurrence_pattern("WEEKLY")
+        (True, "Weekly", "")
+        >>> validate_recurrence_pattern("none")
+        (True, None, "")
+        >>> validate_recurrence_pattern("yearly")
+        (False, None, "Error: Recurrence pattern must be None, Daily, Weekly, or Monthly.")
+    """
+    # Valid recurrence patterns (normalized)
+    VALID_PATTERNS = {
+        "none": None,
+        "daily": "Daily",
+        "weekly": "Weekly",
+        "monthly": "Monthly"
+    }
+
+    # Check for None or empty
+    if pattern is None or (isinstance(pattern, str) and pattern.strip() == ""):
+        return (True, None, "")
+
+    # Convert to string and normalize (strip whitespace, lowercase for comparison)
+    pattern_str = str(pattern).strip().lower()
+
+    # Check if valid
+    if pattern_str in VALID_PATTERNS:
+        normalized = VALID_PATTERNS[pattern_str]
+        return (True, normalized, "")
+    else:
+        return (False, None, "Error: Recurrence pattern must be None, Daily, Weekly, or Monthly.")
+
+
+def create_todo(id: int, title: str, description: str,
+                priority: str = "Medium", tags: list[str] | None = None,
+                recurrence_pattern: str | None = None, recurrence_interval: int = 1) -> dict:
+    """
+    Create a todo dictionary with validated fields (Phase III enhanced with recurrence).
 
     Args:
         id: Unique positive integer ID
@@ -323,11 +424,13 @@ def create_todo(id: int, title: str, description: str,
         description: Todo description (already validated, None converted to "")
         priority: Priority level - "High", "Medium" (default), or "Low"
         tags: List of tags (optional, default empty list)
+        recurrence_pattern: Recurrence pattern - None (default), "Daily", "Weekly", "Monthly"
+        recurrence_interval: Recurrence interval (default 1)
 
     Returns:
-        dict: Todo dictionary with Phase I and Phase II fields
+        dict: Todo dictionary with Phase I, Phase II, and Phase III fields
 
-    Data Structure (Phase II - specs/002-cli-todo-app-enhanced/spec.md):
+    Data Structure (Phase III - specs/003-cli-todo-app-advanced/spec.md):
         {
             "id": int,
             "title": str,
@@ -335,15 +438,17 @@ def create_todo(id: int, title: str, description: str,
             "completed": bool (default False),
             "priority": str (default "Medium"),
             "tags": list[str] (default []),
-            "created_at": datetime (auto-assigned)
+            "created_at": datetime (auto-assigned),
+            "recurrence_pattern": str | None (default None),
+            "recurrence_interval": int (default 1),
+            "next_occurrence": datetime | None (default None)
         }
 
     Examples:
         >>> create_todo(1, "Buy groceries", "Milk, eggs")
-        {'id': 1, 'title': 'Buy groceries', 'description': 'Milk, eggs',
-         'completed': False, 'priority': 'Medium', 'tags': [], 'created_at': ...}
-        >>> create_todo(1, "Fix bug", "Auth issue", priority="High", tags=["work", "urgent"])
-        {..., 'priority': 'High', 'tags': ['work', 'urgent'], ...}
+        {'id': 1, 'title': 'Buy groceries', ..., 'recurrence_pattern': None, ...}
+        >>> create_todo(2, "Take vitamins", "", recurrence_pattern="Daily")
+        {..., 'recurrence_pattern': 'Daily', 'recurrence_interval': 1, ...}
     """
     from datetime import datetime
 
@@ -362,5 +467,8 @@ def create_todo(id: int, title: str, description: str,
         "completed": False,  # All new todos start as incomplete
         "priority": priority,  # Phase II: Default "Medium"
         "tags": tags,  # Phase II: Default []
-        "created_at": datetime.now()  # Phase II: Auto-assigned timestamp
+        "created_at": datetime.now(),  # Phase II: Auto-assigned timestamp
+        "recurrence_pattern": recurrence_pattern,  # Phase III: Default None (no recurrence)
+        "recurrence_interval": recurrence_interval,  # Phase III: Default 1
+        "next_occurrence": None  # Phase III: Calculated when needed
     }

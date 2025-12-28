@@ -18,6 +18,7 @@ classifiers = [
 # No runtime dependencies - stdlib only per spec
 dependencies = [
     "colorama>=0.4.6",
+    "python-dateutil>=2.9.0.post0",
 ]
 
 [project.optional-dependencies]

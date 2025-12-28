@@ -65,23 +65,24 @@ def display_menu() -> None:
     print(Fore.BLUE + "  🏷️   8. " + Style.RESET_ALL + "Manage Tags")
     print(Fore.GREEN + "  🔍  9. " + Style.RESET_ALL + "Search & Filter")
     print(Fore.MAGENTA + "  🔀  10. " + Style.RESET_ALL + "Sort")
-    print(Fore.CYAN + "  👋  11. " + Style.RESET_ALL + "Exit")
+    print(Fore.GREEN + "  🔁  11. " + Style.RESET_ALL + "Set Recurrence")
+    print(Fore.CYAN + "  👋  12. " + Style.RESET_ALL + "Exit")
     print()
 
 
 def get_menu_choice() -> str:
     """
-    Get user's menu choice (Phase II enhanced - includes Set Priority, Manage Tags, Search/Filter, and Sort).
+    Get user's menu choice (Phase III enhanced - includes Set Recurrence).
 
-    Prompts the user with "Enter choice [1-11]: " and returns their input.
+    Prompts the user with "Enter choice [1-12]: " and returns their input.
 
     Returns:
         str: User's menu choice (not validated - validation happens in main loop)
 
-    Phase II Enhancement:
-        - Updated prompt from [1-10] to [1-11] to include Sort
+    Phase III Enhancement:
+        - Updated prompt from [1-11] to [1-12] to include Set Recurrence
     """
-    return input("Enter choice [1-11]: ")
+    return input("Enter choice [1-12]: ")
 
 
 def display_todos(todos: list[dict]) -> None:
@@ -120,9 +121,9 @@ def display_todos(todos: list[dict]) -> None:
     print(Fore.CYAN + Style.BRIGHT + "📋 YOUR TODO LIST:")
     print()
 
-    # Table header (Phase II enhanced with Priority and Tags columns)
-    print(Fore.MAGENTA + Style.BRIGHT + "ID | Priority | Status | Title           | Tags")
-    print(Fore.MAGENTA + "---|----------|--------|-----------------|------------------" + Style.RESET_ALL)
+    # Table header (Phase III enhanced with Priority, Tags, and Recurrence columns)
+    print(Fore.MAGENTA + Style.BRIGHT + "ID | Pri | Rec | Status | Title           | Tags")
+    print(Fore.MAGENTA + "---|-----|-----|--------|-----------------|------------------" + Style.RESET_ALL)
 
     # Data rows
     for todo in todos:
@@ -131,11 +132,22 @@ def display_todos(todos: list[dict]) -> None:
         # Priority indicator with color (Phase II)
         priority = todo.get("priority", "Medium")  # Default to Medium if missing
         if priority == "High":
-            priority_display = Fore.RED + "🔴 H" + Style.RESET_ALL
+            priority_display = Fore.RED + "🔴H" + Style.RESET_ALL
         elif priority == "Low":
-            priority_display = Fore.BLUE + "🔵 L" + Style.RESET_ALL
+            priority_display = Fore.BLUE + "🔵L" + Style.RESET_ALL
         else:  # Medium
-            priority_display = Fore.YELLOW + "🟡 M" + Style.RESET_ALL
+            priority_display = Fore.YELLOW + "🟡M" + Style.RESET_ALL
+
+        # Recurrence indicator (Phase III - User Story 9)
+        recurrence = todo.get("recurrence_pattern")
+        if recurrence == "Daily":
+            recurrence_display = Fore.GREEN + "🔁D" + Style.RESET_ALL
+        elif recurrence == "Weekly":
+            recurrence_display = Fore.BLUE + "🔁W" + Style.RESET_ALL
+        elif recurrence == "Monthly":
+            recurrence_display = Fore.MAGENTA + "🔁M" + Style.RESET_ALL
+        else:
+            recurrence_display = "   "  # No recurrence
 
         # Use emoji for status
         if todo["completed"]:
@@ -153,12 +165,12 @@ def display_todos(todos: list[dict]) -> None:
         else:
             tags_display = ""
 
-        # Format: ID | Priority | Status | Title | Tags
+        # Format: ID | Pri | Rec | Status | Title | Tags
         # Color completed todos differently
         if todo["completed"]:
-            print(f"{Fore.GREEN}{todo_id:<2}{Style.RESET_ALL} | {priority_display:<10} | {status:<6} | {Fore.GREEN}{title:<15}{Style.RESET_ALL} | {tags_display}")
+            print(f"{Fore.GREEN}{todo_id:<2}{Style.RESET_ALL} | {priority_display:<3} | {recurrence_display:<3} | {status:<6} | {Fore.GREEN}{title:<15}{Style.RESET_ALL} | {tags_display}")
         else:
-            print(f"{Fore.CYAN}{todo_id:<2}{Style.RESET_ALL} | {priority_display:<10} | {status:<6} | {title:<15} | {tags_display}")
+            print(f"{Fore.CYAN}{todo_id:<2}{Style.RESET_ALL} | {priority_display:<3} | {recurrence_display:<3} | {status:<6} | {title:<15} | {tags_display}")
 
     print()  # Empty line after list
 
@@ -728,3 +740,56 @@ def handle_sort() -> None:
         print(Fore.CYAN + Style.BRIGHT + f"📊 SORTED RESULTS ({len(sorted_todos)} todos):" + Style.RESET_ALL)
         print()
         display_todos(sorted_todos)
+
+
+def handle_set_recurrence() -> None:
+    """
+    Handle Set Recurrence operation (Phase III - User Story 9).
+
+    Input Prompts:
+        1. "Enter todo ID: "
+        2. "Enter recurrence pattern (None/Daily/Weekly/Monthly): "
+        3. "Enter interval (default 1): " (optional)
+
+    Output:
+        - Success: "Todo ID N recurrence set to {pattern}!"
+        - Remove: "Todo ID N recurrence removed!"
+        - Error: Various validation errors from storage layer
+
+    Flow:
+        1. Prompt for todo ID
+        2. Prompt for recurrence pattern
+        3. Optionally prompt for interval
+        4. Call storage.set_recurrence()
+        5. Display result message
+    """
+    from storage import set_recurrence
+
+    # Prompt for ID
+    todo_id = input(Fore.CYAN + "Enter todo ID: " + Style.RESET_ALL)
+
+    # Prompt for recurrence pattern
+    print(Fore.YELLOW + "Recurrence options: " + Fore.WHITE + "None" + Fore.YELLOW + " / " +
+          Fore.GREEN + "Daily" + Fore.YELLOW + " / " + Fore.BLUE + "Weekly" + Fore.YELLOW + " / " +
+          Fore.MAGENTA + "Monthly" + Style.RESET_ALL)
+    pattern = input(Fore.CYAN + "Enter pattern: " + Style.RESET_ALL)
+
+    # Prompt for interval (optional, default 1)
+    interval_input = input(Fore.CYAN + "Enter interval (press Enter for 1): " + Style.RESET_ALL).strip()
+    if interval_input:
+        try:
+            interval = int(interval_input)
+        except ValueError:
+            print(Fore.RED + "❌ Error: Interval must be a positive integer." + Style.RESET_ALL)
+            return
+    else:
+        interval = 1
+
+    # Call storage layer
+    success, message = set_recurrence(todo_id, pattern, interval)
+
+    # Display result with color
+    if success:
+        print(Fore.GREEN + "✅ " + message + Style.RESET_ALL)
+    else:
+        print(Fore.RED + "❌ " + message + Style.RESET_ALL)

@@ -481,5 +481,173 @@ class TestCreateTodoPhase2(unittest.TestCase):
         self.assertIn("created_at", todo)
 
 
+class TestValidateRecurrencePattern(unittest.TestCase):
+    """Test cases for validate_recurrence_pattern function (Phase III - User Story 9)."""
+
+    def test_valid_pattern_daily(self):
+        """'Daily' should be accepted and normalized."""
+        from models import validate_recurrence_pattern
+        valid, normalized, error = validate_recurrence_pattern("Daily")
+        self.assertTrue(valid)
+        self.assertEqual(normalized, "Daily")
+        self.assertEqual(error, "")
+
+    def test_valid_pattern_weekly(self):
+        """'Weekly' should be accepted and normalized."""
+        from models import validate_recurrence_pattern
+        valid, normalized, error = validate_recurrence_pattern("Weekly")
+        self.assertTrue(valid)
+        self.assertEqual(normalized, "Weekly")
+        self.assertEqual(error, "")
+
+    def test_valid_pattern_monthly(self):
+        """'Monthly' should be accepted and normalized."""
+        from models import validate_recurrence_pattern
+        valid, normalized, error = validate_recurrence_pattern("Monthly")
+        self.assertTrue(valid)
+        self.assertEqual(normalized, "Monthly")
+        self.assertEqual(error, "")
+
+    def test_pattern_none_returns_none(self):
+        """'None' should return None (no recurrence)."""
+        from models import validate_recurrence_pattern
+        valid, normalized, error = validate_recurrence_pattern("None")
+        self.assertTrue(valid)
+        self.assertIsNone(normalized)
+        self.assertEqual(error, "")
+
+    def test_case_insensitive_patterns(self):
+        """Should accept patterns in any case and normalize."""
+        from models import validate_recurrence_pattern
+
+        patterns = ["daily", "DAILY", "DaiLy", "weekly", "WEEKLY", "monthly", "MONTHLY"]
+        expected = ["Daily", "Daily", "Daily", "Weekly", "Weekly", "Monthly", "Monthly"]
+
+        for pattern, expect in zip(patterns, expected):
+            valid, normalized, error = validate_recurrence_pattern(pattern)
+            self.assertTrue(valid, f"'{pattern}' should be valid")
+            self.assertEqual(normalized, expect)
+
+    def test_invalid_pattern_returns_error(self):
+        """Invalid patterns should return error."""
+        from models import validate_recurrence_pattern
+
+        for invalid in ["yearly", "hourly", "biweekly", "custom", "123"]:
+            valid, normalized, error = validate_recurrence_pattern(invalid)
+            self.assertFalse(valid)
+            self.assertIsNone(normalized)
+            self.assertEqual(error, "Error: Recurrence pattern must be None, Daily, Weekly, or Monthly.")
+
+    def test_empty_string_returns_none(self):
+        """Empty string should return None (no recurrence)."""
+        from models import validate_recurrence_pattern
+        valid, normalized, error = validate_recurrence_pattern("")
+        self.assertTrue(valid)
+        self.assertIsNone(normalized)
+        self.assertEqual(error, "")
+
+    def test_none_input_returns_none(self):
+        """None input should return None (no recurrence)."""
+        from models import validate_recurrence_pattern
+        valid, normalized, error = validate_recurrence_pattern(None)
+        self.assertTrue(valid)
+        self.assertIsNone(normalized)
+        self.assertEqual(error, "")
+
+
+class TestMigrateTodoToPhase3(unittest.TestCase):
+    """Test cases for migrate_todo_to_phase3 function (Phase III - User Story 9)."""
+
+    def test_migrate_phase2_todo_adds_recurrence_fields(self):
+        """Should add recurrence fields to Phase II todo."""
+        from models import migrate_todo_to_phase3
+        from datetime import datetime
+
+        phase2_todo = {
+            "id": 1,
+            "title": "Buy groceries",
+            "description": "Milk, eggs",
+            "completed": False,
+            "priority": "Medium",
+            "tags": [],
+            "created_at": datetime.now()
+        }
+
+        migrated = migrate_todo_to_phase3(phase2_todo)
+
+        # Should preserve all Phase I and Phase II fields
+        self.assertEqual(migrated["id"], 1)
+        self.assertEqual(migrated["title"], "Buy groceries")
+        self.assertEqual(migrated["description"], "Milk, eggs")
+        self.assertEqual(migrated["completed"], False)
+        self.assertEqual(migrated["priority"], "Medium")
+        self.assertEqual(migrated["tags"], [])
+
+        # Should add Phase III fields with defaults
+        self.assertIsNone(migrated["recurrence_pattern"])
+        self.assertEqual(migrated["recurrence_interval"], 1)
+        self.assertIsNone(migrated["next_occurrence"])
+
+    def test_migrate_already_migrated_todo_is_idempotent(self):
+        """Should not modify todo that already has Phase III fields."""
+        from models import migrate_todo_to_phase3
+        from datetime import datetime
+
+        already_migrated = {
+            "id": 2,
+            "title": "Take vitamins",
+            "description": "Daily vitamins",
+            "completed": False,
+            "priority": "High",
+            "tags": ["health"],
+            "created_at": datetime(2025, 1, 1),
+            "recurrence_pattern": "Daily",
+            "recurrence_interval": 1,
+            "next_occurrence": datetime(2025, 1, 2)
+        }
+
+        result = migrate_todo_to_phase3(already_migrated)
+
+        # Should preserve ALL fields unchanged
+        self.assertEqual(result["recurrence_pattern"], "Daily")
+        self.assertEqual(result["recurrence_interval"], 1)
+        self.assertEqual(result["next_occurrence"], datetime(2025, 1, 2))
+
+
+class TestCreateTodoPhase3(unittest.TestCase):
+    """Test cases for create_todo function with Phase III fields (recurrence)."""
+
+    def test_create_todo_with_recurrence(self):
+        """Should create todo with recurrence pattern."""
+        from models import create_todo
+
+        todo = create_todo(1, "Take vitamins", "Daily vitamins", recurrence_pattern="Daily")
+
+        # Verify Phase III fields
+        self.assertEqual(todo["recurrence_pattern"], "Daily")
+        self.assertEqual(todo["recurrence_interval"], 1)
+        self.assertIsNone(todo["next_occurrence"])
+
+    def test_create_todo_without_recurrence(self):
+        """Should create todo without recurrence (default)."""
+        from models import create_todo
+
+        todo = create_todo(1, "Buy groceries", "Milk")
+
+        # Verify Phase III fields exist with defaults
+        self.assertIsNone(todo["recurrence_pattern"])
+        self.assertEqual(todo["recurrence_interval"], 1)
+        self.assertIsNone(todo["next_occurrence"])
+
+    def test_create_todo_with_custom_interval(self):
+        """Should create todo with custom recurrence interval."""
+        from models import create_todo
+
+        todo = create_todo(1, "Weekly meeting", "Team sync", recurrence_pattern="Weekly", recurrence_interval=2)
+
+        self.assertEqual(todo["recurrence_pattern"], "Weekly")
+        self.assertEqual(todo["recurrence_interval"], 2)
+
+
 if __name__ == "__main__":
     unittest.main()
