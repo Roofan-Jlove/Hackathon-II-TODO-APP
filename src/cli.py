@@ -121,9 +121,9 @@ def display_todos(todos: list[dict]) -> None:
     print(Fore.CYAN + Style.BRIGHT + "📋 YOUR TODO LIST:")
     print()
 
-    # Table header (Phase III enhanced with Priority, Tags, and Recurrence columns)
-    print(Fore.MAGENTA + Style.BRIGHT + "ID | Pri | Rec | Status | Title           | Tags")
-    print(Fore.MAGENTA + "---|-----|-----|--------|-----------------|------------------" + Style.RESET_ALL)
+    # Table header (Phase III enhanced with Priority, Tags, Recurrence, and Description)
+    print(Fore.MAGENTA + Style.BRIGHT + "ID | Pri | Rec | St | Title           | Description        | Tags")
+    print(Fore.MAGENTA + "---|-----|-----|----|-----------------|--------------------|------------------" + Style.RESET_ALL)
 
     # Data rows
     for todo in todos:
@@ -149,13 +149,20 @@ def display_todos(todos: list[dict]) -> None:
         else:
             recurrence_display = "   "  # No recurrence
 
-        # Use emoji for status
+        # Use emoji for status (shortened to fit better)
         if todo["completed"]:
             status = Fore.GREEN + "✅" + Style.RESET_ALL
         else:
             status = Fore.WHITE + "⬜" + Style.RESET_ALL
 
         title = todo["title"]
+
+        # Description with truncation if needed
+        description = todo.get("description", "")
+        if len(description) > 18:
+            description_display = description[:15] + "..."
+        else:
+            description_display = description
 
         # Tags display (Phase II - User Story 6)
         tags = todo.get("tags", [])
@@ -165,12 +172,12 @@ def display_todos(todos: list[dict]) -> None:
         else:
             tags_display = ""
 
-        # Format: ID | Pri | Rec | Status | Title | Tags
+        # Format: ID | Pri | Rec | St | Title | Description | Tags
         # Color completed todos differently
         if todo["completed"]:
-            print(f"{Fore.GREEN}{todo_id:<2}{Style.RESET_ALL} | {priority_display:<3} | {recurrence_display:<3} | {status:<6} | {Fore.GREEN}{title:<15}{Style.RESET_ALL} | {tags_display}")
+            print(f"{Fore.GREEN}{todo_id:<2}{Style.RESET_ALL} | {priority_display:<3} | {recurrence_display:<3} | {status:<2} | {Fore.GREEN}{title:<15}{Style.RESET_ALL} | {description_display:<18} | {tags_display}")
         else:
-            print(f"{Fore.CYAN}{todo_id:<2}{Style.RESET_ALL} | {priority_display:<3} | {recurrence_display:<3} | {status:<6} | {title:<15} | {tags_display}")
+            print(f"{Fore.CYAN}{todo_id:<2}{Style.RESET_ALL} | {priority_display:<3} | {recurrence_display:<3} | {status:<2} | {title:<15} | {description_display:<18} | {tags_display}")
 
     print()  # Empty line after list
 
