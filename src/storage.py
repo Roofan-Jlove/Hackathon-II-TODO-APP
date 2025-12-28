@@ -108,15 +108,21 @@ def add_todo(title: str, description: str | None) -> tuple[bool, int | None, str
 
 def get_all_todos() -> list[dict]:
     """
-    Retrieve all todos sorted by ID ascending.
+    Retrieve all todos sorted by ID ascending (Phase II enhanced with migration).
 
     Returns:
         list[dict]: List of all todo dictionaries, sorted by ID ascending
             Returns empty list if no todos exist
+            All todos guaranteed to have Phase II fields (priority, tags, created_at)
 
     Sorting Rules:
         - Per CLI contract (line 110): Todos displayed in ID ascending order
         - Ensures consistent display order regardless of insertion order
+
+    Migration Behavior (Phase II):
+        - Automatically migrates Phase I todos to Phase II format
+        - Migration is transparent and idempotent
+        - Modifies global todos list in-place to persist migration
 
     Examples:
         >>> get_all_todos()
@@ -128,7 +134,17 @@ def get_all_todos() -> list[dict]:
         1
         >>> todos[1]['id']
         2
+        >>> todos[0]['priority']  # Phase II field
+        'Medium'
     """
+    from models import migrate_todo_to_phase2
+
+    # Migrate all todos to Phase II format in-place (idempotent)
+    # This ensures backward compatibility with Phase I todos
+    global todos
+    for i in range(len(todos)):
+        todos[i] = migrate_todo_to_phase2(todos[i])
+
     # Return sorted copy (sort by 'id' key ascending)
     return sorted(todos, key=lambda todo: todo["id"])
 

@@ -142,37 +142,101 @@ def validate_description(description: str | None) -> tuple[bool, str]:
     return (True, "")
 
 
-def create_todo(id: int, title: str, description: str) -> dict:
+def migrate_todo_to_phase2(todo: dict) -> dict:
     """
-    Create a todo dictionary with validated fields.
+    Migrate a Phase I todo to Phase II by adding priority, tags, and created_at fields.
+
+    This function is idempotent - it safely handles todos that already have Phase II fields.
+
+    Args:
+        todo: Todo dictionary (Phase I or Phase II format)
+
+    Returns:
+        dict: Todo with Phase II fields guaranteed to exist
+
+    Phase II Migration Rules:
+        - If "priority" missing: Add with default "Medium"
+        - If "tags" missing: Add with default []
+        - If "created_at" missing: Add with current timestamp
+        - All Phase I fields (id, title, description, completed) preserved unchanged
+
+    Examples:
+        >>> phase1_todo = {"id": 1, "title": "Buy milk", "description": "", "completed": False}
+        >>> migrated = migrate_todo_to_phase2(phase1_todo)
+        >>> migrated["priority"]
+        'Medium'
+        >>> migrated["tags"]
+        []
+        >>> "created_at" in migrated
+        True
+    """
+    from datetime import datetime
+
+    # Create new dict to avoid mutating input
+    migrated = todo.copy()
+
+    # Add Phase II fields with defaults if missing
+    if "priority" not in migrated:
+        migrated["priority"] = "Medium"
+
+    if "tags" not in migrated:
+        migrated["tags"] = []
+
+    if "created_at" not in migrated:
+        migrated["created_at"] = datetime.now()
+
+    return migrated
+
+
+def create_todo(id: int, title: str, description: str,
+                priority: str = "Medium", tags: list[str] | None = None) -> dict:
+    """
+    Create a todo dictionary with validated fields (Phase II enhanced).
 
     Args:
         id: Unique positive integer ID
         title: Todo title (already validated)
         description: Todo description (already validated, None converted to "")
+        priority: Priority level - "High", "Medium" (default), or "Low"
+        tags: List of tags (optional, default empty list)
 
     Returns:
-        dict: Todo dictionary with keys: id, title, description, completed
+        dict: Todo dictionary with Phase I and Phase II fields
 
-    Data Structure (data-model.md lines 56-63):
+    Data Structure (Phase II - specs/002-cli-todo-app-enhanced/spec.md):
         {
             "id": int,
             "title": str,
             "description": str,
-            "completed": bool (default False)
+            "completed": bool (default False),
+            "priority": str (default "Medium"),
+            "tags": list[str] (default []),
+            "created_at": datetime (auto-assigned)
         }
 
     Examples:
         >>> create_todo(1, "Buy groceries", "Milk, eggs")
-        {'id': 1, 'title': 'Buy groceries', 'description': 'Milk, eggs', 'completed': False}
+        {'id': 1, 'title': 'Buy groceries', 'description': 'Milk, eggs',
+         'completed': False, 'priority': 'Medium', 'tags': [], 'created_at': ...}
+        >>> create_todo(1, "Fix bug", "Auth issue", priority="High", tags=["work", "urgent"])
+        {..., 'priority': 'High', 'tags': ['work', 'urgent'], ...}
     """
+    from datetime import datetime
+
     # Convert None description to empty string
     if description is None:
         description = ""
+
+    # Convert None tags to empty list
+    if tags is None:
+        tags = []
 
     return {
         "id": id,
         "title": title,
         "description": description,
-        "completed": False  # All new todos start as incomplete
+        "completed": False,  # All new todos start as incomplete
+        "priority": priority,  # Phase II: Default "Medium"
+        "tags": tags,  # Phase II: Default []
+        "created_at": datetime.now()  # Phase II: Auto-assigned timestamp
     }

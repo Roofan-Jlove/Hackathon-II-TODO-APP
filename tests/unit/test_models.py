@@ -147,5 +147,150 @@ class TestValidateId(unittest.TestCase):
         self.assertEqual(error, "Error: ID must be a positive integer.")
 
 
+class TestMigrateTodoToPhase2(unittest.TestCase):
+    """Test cases for migrate_todo_to_phase2 function (data migration)."""
+
+    def test_migrate_phase1_todo_adds_all_phase2_fields(self):
+        """Should add priority, tags, and created_at to Phase I todo."""
+        from models import migrate_todo_to_phase2
+        from datetime import datetime
+
+        # Phase I todo (no Phase II fields)
+        phase1_todo = {
+            "id": 1,
+            "title": "Buy groceries",
+            "description": "Milk, eggs",
+            "completed": False
+        }
+
+        before_migration = datetime.now()
+        migrated = migrate_todo_to_phase2(phase1_todo)
+        after_migration = datetime.now()
+
+        # Should preserve Phase I fields
+        self.assertEqual(migrated["id"], 1)
+        self.assertEqual(migrated["title"], "Buy groceries")
+        self.assertEqual(migrated["description"], "Milk, eggs")
+        self.assertEqual(migrated["completed"], False)
+
+        # Should add Phase II fields with defaults
+        self.assertEqual(migrated["priority"], "Medium")
+        self.assertEqual(migrated["tags"], [])
+        self.assertIn("created_at", migrated)
+        self.assertGreaterEqual(migrated["created_at"], before_migration)
+        self.assertLessEqual(migrated["created_at"], after_migration)
+
+    def test_migrate_already_migrated_todo_is_idempotent(self):
+        """Should not modify todo that already has Phase II fields."""
+        from models import migrate_todo_to_phase2
+        from datetime import datetime
+
+        # Already migrated todo
+        already_migrated = {
+            "id": 2,
+            "title": "Fix bug",
+            "description": "Auth error",
+            "completed": True,
+            "priority": "High",
+            "tags": ["work", "urgent"],
+            "created_at": datetime(2025, 1, 1, 12, 0, 0)
+        }
+
+        result = migrate_todo_to_phase2(already_migrated)
+
+        # Should preserve ALL fields unchanged
+        self.assertEqual(result["id"], 2)
+        self.assertEqual(result["title"], "Fix bug")
+        self.assertEqual(result["description"], "Auth error")
+        self.assertEqual(result["completed"], True)
+        self.assertEqual(result["priority"], "High")
+        self.assertEqual(result["tags"], ["work", "urgent"])
+        self.assertEqual(result["created_at"], datetime(2025, 1, 1, 12, 0, 0))
+
+    def test_migrate_preserves_completion_status(self):
+        """Should preserve completed=True from Phase I todos."""
+        from models import migrate_todo_to_phase2
+
+        completed_todo = {
+            "id": 3,
+            "title": "Completed task",
+            "description": "Done",
+            "completed": True
+        }
+
+        migrated = migrate_todo_to_phase2(completed_todo)
+
+        # Should preserve completed status
+        self.assertEqual(migrated["completed"], True)
+        # Should add Phase II fields
+        self.assertEqual(migrated["priority"], "Medium")
+        self.assertEqual(migrated["tags"], [])
+        self.assertIn("created_at", migrated)
+
+
+class TestCreateTodoPhase2(unittest.TestCase):
+    """Test cases for create_todo function with Phase II fields (priority, tags, created_at)."""
+
+    def test_create_todo_with_default_priority(self):
+        """Should create todo with default priority 'Medium' when not specified."""
+        from models import create_todo
+
+        todo = create_todo(1, "Buy groceries", "Milk, eggs")
+
+        # Verify Phase II fields exist with defaults
+        self.assertEqual(todo["priority"], "Medium")
+        self.assertEqual(todo["tags"], [])
+        self.assertIn("created_at", todo)
+
+    def test_create_todo_with_custom_priority(self):
+        """Should create todo with specified priority."""
+        from models import create_todo
+
+        todo = create_todo(1, "Buy groceries", "Milk", priority="High")
+
+        self.assertEqual(todo["priority"], "High")
+
+    def test_create_todo_with_tags(self):
+        """Should create todo with specified tags list."""
+        from models import create_todo
+
+        todo = create_todo(1, "Buy groceries", "Milk", tags=["work", "urgent"])
+
+        self.assertEqual(todo["tags"], ["work", "urgent"])
+
+    def test_create_todo_with_all_phase2_fields(self):
+        """Should create todo with all Phase II fields specified."""
+        from models import create_todo
+        from datetime import datetime
+
+        before_creation = datetime.now()
+        todo = create_todo(1, "Buy groceries", "Milk", priority="Low", tags=["personal"])
+        after_creation = datetime.now()
+
+        # Verify all fields
+        self.assertEqual(todo["id"], 1)
+        self.assertEqual(todo["title"], "Buy groceries")
+        self.assertEqual(todo["description"], "Milk")
+        self.assertEqual(todo["completed"], False)
+        self.assertEqual(todo["priority"], "Low")
+        self.assertEqual(todo["tags"], ["personal"])
+
+        # Verify created_at is between before and after
+        self.assertGreaterEqual(todo["created_at"], before_creation)
+        self.assertLessEqual(todo["created_at"], after_creation)
+
+    def test_create_todo_backward_compatible(self):
+        """Should work with Phase I signature (no priority/tags parameters)."""
+        from models import create_todo
+
+        # Call without Phase II parameters (backward compatibility)
+        todo = create_todo(1, "Buy groceries", "Milk")
+
+        # Should still create with defaults
+        self.assertEqual(todo["priority"], "Medium")
+        self.assertEqual(todo["tags"], [])
+        self.assertIn("created_at", todo)
+
+
 if __name__ == "__main__":
     unittest.main()
