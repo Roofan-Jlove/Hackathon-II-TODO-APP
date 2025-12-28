@@ -231,6 +231,111 @@ class TestValidatePriority(unittest.TestCase):
         self.assertEqual(error, "")
 
 
+class TestValidateTags(unittest.TestCase):
+    """Test cases for validate_tags function (Phase II - User Story 6)."""
+
+    def test_valid_single_tag(self):
+        """Single tag should be accepted and normalized to lowercase."""
+        from models import validate_tags
+
+        valid, normalized, error = validate_tags("work")
+
+        self.assertTrue(valid)
+        self.assertEqual(normalized, ["work"])
+        self.assertEqual(error, "")
+
+    def test_valid_multiple_tags_comma_separated(self):
+        """Multiple comma-separated tags should be parsed and normalized."""
+        from models import validate_tags
+
+        valid, normalized, error = validate_tags("work, urgent, important")
+
+        self.assertTrue(valid)
+        self.assertEqual(normalized, ["work", "urgent", "important"])
+        self.assertEqual(error, "")
+
+    def test_tags_normalized_to_lowercase(self):
+        """Tags should be normalized to lowercase for case-insensitive matching."""
+        from models import validate_tags
+
+        valid, normalized, error = validate_tags("Work, URGENT, Personal")
+
+        self.assertTrue(valid)
+        self.assertEqual(normalized, ["work", "urgent", "personal"])
+        self.assertEqual(error, "")
+
+    def test_whitespace_trimmed_from_tags(self):
+        """Leading/trailing whitespace should be trimmed from each tag."""
+        from models import validate_tags
+
+        valid, normalized, error = validate_tags("  work  ,  urgent  ,  personal  ")
+
+        self.assertTrue(valid)
+        self.assertEqual(normalized, ["work", "urgent", "personal"])
+        self.assertEqual(error, "")
+
+    def test_empty_string_returns_empty_list(self):
+        """Empty string should return empty list (valid - optional field)."""
+        from models import validate_tags
+
+        valid, normalized, error = validate_tags("")
+
+        self.assertTrue(valid)
+        self.assertEqual(normalized, [])
+        self.assertEqual(error, "")
+
+    def test_none_returns_empty_list(self):
+        """None should return empty list (valid - optional field)."""
+        from models import validate_tags
+
+        valid, normalized, error = validate_tags(None)
+
+        self.assertTrue(valid)
+        self.assertEqual(normalized, [])
+        self.assertEqual(error, "")
+
+    def test_duplicate_tags_removed(self):
+        """Duplicate tags should be removed (case-insensitive)."""
+        from models import validate_tags
+
+        valid, normalized, error = validate_tags("work, Work, WORK, urgent")
+
+        self.assertTrue(valid)
+        self.assertEqual(normalized, ["work", "urgent"])
+        self.assertEqual(error, "")
+
+    def test_tag_too_long_returns_error(self):
+        """Tags longer than 20 characters should return error."""
+        from models import validate_tags
+
+        long_tag = "a" * 21
+        valid, normalized, error = validate_tags(long_tag)
+
+        self.assertFalse(valid)
+        self.assertIsNone(normalized)
+        self.assertEqual(error, "Error: Each tag must be 1-20 characters.")
+
+    def test_empty_tag_after_split_ignored(self):
+        """Empty tags after splitting (e.g., 'work,,urgent') should be ignored."""
+        from models import validate_tags
+
+        valid, normalized, error = validate_tags("work,,urgent,  ,personal")
+
+        self.assertTrue(valid)
+        self.assertEqual(normalized, ["work", "urgent", "personal"])
+        self.assertEqual(error, "")
+
+    def test_list_of_tags_accepted(self):
+        """List of tags should be accepted directly."""
+        from models import validate_tags
+
+        valid, normalized, error = validate_tags(["Work", "Urgent"])
+
+        self.assertTrue(valid)
+        self.assertEqual(normalized, ["work", "urgent"])
+        self.assertEqual(error, "")
+
+
 class TestMigrateTodoToPhase2(unittest.TestCase):
     """Test cases for migrate_todo_to_phase2 function (data migration)."""
 

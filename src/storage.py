@@ -485,3 +485,135 @@ def update_priority(todo_id: any, new_priority: str) -> tuple[bool, str]:
 
     # Return success
     return (True, f"Todo ID {parsed_id} priority updated to {normalized_priority}!")
+
+
+def add_tags(todo_id: any, new_tags: str | list[str]) -> tuple[bool, str]:
+    """
+    Add tags to an existing todo (Phase II - User Story 6).
+
+    Args:
+        todo_id: ID of todo to update (any type, will be validated)
+        new_tags: Tags to add (string or list)
+
+    Returns:
+        tuple: (success, message)
+            - success (bool): True if tags were added
+            - message (str): Success message or error message
+
+    Behavior:
+        - Validates todo ID
+        - Validates and normalizes new tags
+        - Adds tags to existing tags (no duplicates)
+        - Preserves existing tags
+
+    Error Messages:
+        - Invalid ID: "Error: ID must be a positive integer."
+        - Not found: "Error: Todo with ID {id} not found."
+        - Invalid tags: "Error: Each tag must be 1-20 characters."
+
+    Success Message:
+        - "Tags added to todo ID {id}!"
+
+    Examples:
+        >>> add_todo("Buy groceries", "Milk")
+        (True, 1, "Todo added successfully! (ID: 1)")
+        >>> add_tags(1, "work, urgent")
+        (True, "Tags added to todo ID 1!")
+    """
+    from models import validate_id, validate_tags
+
+    # Validate ID
+    valid, parsed_id, error = validate_id(todo_id)
+    if not valid:
+        return (False, error)
+
+    # Get todo
+    todo = get_todo_by_id(parsed_id)
+    if todo is None:
+        return (False, f"Error: Todo with ID {parsed_id} not found.")
+
+    # Validate new tags
+    tags_valid, normalized_tags, tags_error = validate_tags(new_tags)
+    if not tags_valid:
+        return (False, tags_error)
+
+    # Get existing tags
+    existing_tags = todo.get("tags", [])
+
+    # Merge tags (avoid duplicates)
+    existing_tags_set = set(existing_tags)
+    for tag in normalized_tags:
+        if tag not in existing_tags_set:
+            existing_tags.append(tag)
+            existing_tags_set.add(tag)
+
+    # Update tags
+    todo["tags"] = existing_tags
+
+    # Return success
+    return (True, f"Tags added to todo ID {parsed_id}!")
+
+
+def remove_tags(todo_id: any, tags_to_remove: str | list[str]) -> tuple[bool, str]:
+    """
+    Remove tags from an existing todo (Phase II - User Story 6).
+
+    Args:
+        todo_id: ID of todo to update (any type, will be validated)
+        tags_to_remove: Tags to remove (string or list)
+
+    Returns:
+        tuple: (success, message)
+            - success (bool): True if tags were removed
+            - message (str): Success message or error message
+
+    Behavior:
+        - Validates todo ID
+        - Normalizes tags to remove (case-insensitive)
+        - Removes specified tags from todo
+        - Silently ignores tags that don't exist
+
+    Error Messages:
+        - Invalid ID: "Error: ID must be a positive integer."
+        - Not found: "Error: Todo with ID {id} not found."
+
+    Success Message:
+        - "Tags removed from todo ID {id}!"
+
+    Examples:
+        >>> add_todo("Buy groceries", "Milk")
+        (True, 1, "Todo added successfully! (ID: 1)")
+        >>> add_tags(1, "work, urgent")
+        (True, "Tags added to todo ID 1!")
+        >>> remove_tags(1, "urgent")
+        (True, "Tags removed from todo ID 1!")
+    """
+    from models import validate_id, validate_tags
+
+    # Validate ID
+    valid, parsed_id, error = validate_id(todo_id)
+    if not valid:
+        return (False, error)
+
+    # Get todo
+    todo = get_todo_by_id(parsed_id)
+    if todo is None:
+        return (False, f"Error: Todo with ID {parsed_id} not found.")
+
+    # Validate tags to remove (for normalization)
+    tags_valid, normalized_tags, tags_error = validate_tags(tags_to_remove)
+    if not tags_valid:
+        return (False, tags_error)
+
+    # Get existing tags
+    existing_tags = todo.get("tags", [])
+
+    # Remove specified tags (case-insensitive)
+    tags_to_remove_set = set(normalized_tags)
+    updated_tags = [tag for tag in existing_tags if tag not in tags_to_remove_set]
+
+    # Update tags
+    todo["tags"] = updated_tags
+
+    # Return success
+    return (True, f"Tags removed from todo ID {parsed_id}!")

@@ -190,6 +190,82 @@ def validate_priority(priority: str | None) -> tuple[bool, str | None, str]:
         return (False, None, "Error: Priority must be High, Medium, or Low.")
 
 
+def validate_tags(tags: str | list[str] | None) -> tuple[bool, list[str] | None, str]:
+    """
+    Validate and normalize tags (Phase II - User Story 6).
+
+    Args:
+        tags: Tags to validate - can be:
+              - String: comma-separated tags "work, urgent, personal"
+              - List: ["work", "urgent", "personal"]
+              - None: returns empty list
+
+    Returns:
+        tuple: (valid, normalized_tags, error_message)
+            - valid (bool): True if validation passed
+            - normalized_tags (list[str] | None): Normalized tag list if valid, None otherwise
+            - error_message (str): Error message if invalid, empty string if valid
+
+    Validation Rules:
+        - Each tag must be 1-20 characters
+        - Tags normalized to lowercase (case-insensitive)
+        - Leading/trailing whitespace trimmed
+        - Duplicate tags removed
+        - Empty tags ignored
+
+    Error Messages:
+        - Tag too long: "Error: Each tag must be 1-20 characters."
+
+    Examples:
+        >>> validate_tags("work, urgent")
+        (True, ["work", "urgent"], "")
+        >>> validate_tags("Work, URGENT, work")
+        (True, ["work", "urgent"], "")
+        >>> validate_tags(["Personal", "Shopping"])
+        (True, ["personal", "shopping"], "")
+    """
+    # Handle None - return empty list
+    if tags is None:
+        return (True, [], "")
+
+    # Handle empty string - return empty list
+    if isinstance(tags, str) and tags.strip() == "":
+        return (True, [], "")
+
+    # Convert to list if string (split by comma)
+    if isinstance(tags, str):
+        tag_list = [tag.strip() for tag in tags.split(",")]
+    elif isinstance(tags, list):
+        tag_list = [str(tag).strip() for tag in tags]
+    else:
+        tag_list = [str(tags).strip()]
+
+    # Remove empty tags and normalize
+    normalized_tags = []
+    seen = set()  # Track duplicates (case-insensitive)
+
+    for tag in tag_list:
+        # Skip empty tags
+        if not tag:
+            continue
+
+        # Check length
+        if len(tag) > 20:
+            return (False, None, "Error: Each tag must be 1-20 characters.")
+
+        # Normalize to lowercase
+        tag_lower = tag.lower()
+
+        # Skip duplicates (case-insensitive)
+        if tag_lower in seen:
+            continue
+
+        seen.add(tag_lower)
+        normalized_tags.append(tag_lower)
+
+    return (True, normalized_tags, "")
+
+
 def migrate_todo_to_phase2(todo: dict) -> dict:
     """
     Migrate a Phase I todo to Phase II by adding priority, tags, and created_at fields.

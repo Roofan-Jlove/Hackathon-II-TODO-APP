@@ -21,7 +21,7 @@ if sys.platform == "win32":
         sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'strict')
         sys.stderr = codecs.getwriter('utf-8')(sys.stderr.buffer, 'strict')
 
-from cli import display_menu, get_menu_choice, handle_add, handle_list, handle_mark_complete, handle_mark_incomplete, handle_update, handle_delete, handle_set_priority
+from cli import display_menu, get_menu_choice, handle_add, handle_list, handle_mark_complete, handle_mark_incomplete, handle_update, handle_delete, handle_set_priority, handle_manage_tags
 from colorama import Fore, Style, init
 
 # Initialize colorama
@@ -33,7 +33,7 @@ def main():
     Main application loop with Phase II enhanced menu.
 
     Displays menu, gets user choice, and dispatches commands.
-    Continues until user selects Exit (choice 8).
+    Continues until user selects Exit (choice 9).
 
     Menu Choices:
         1: Add Todo (handler in User Story 1)
@@ -43,7 +43,8 @@ def main():
         5: Mark Todo Complete (handler in User Story 2)
         6: Mark Todo Incomplete (handler in User Story 2)
         7: Set Priority (handler in User Story 5 - Phase II)
-        8: Exit
+        8: Manage Tags (handler in User Story 6 - Phase II)
+        9: Exit
 
     Contract: Implements menu-driven loop pattern per research.md and CLI contract
     """
@@ -55,7 +56,7 @@ def main():
         choice = get_menu_choice()
 
         # Handle Exit
-        if choice == "8":
+        if choice == "9":
             print()
             print(Fore.CYAN + "👋 " + Fore.YELLOW + Style.BRIGHT + "Goodbye! Thanks for using TODO APP!" + Style.RESET_ALL)
             print(Fore.YELLOW + "⚠️  Note: All todos will be lost (in-memory only).")
@@ -63,8 +64,8 @@ def main():
             break
 
         # Handle invalid choices
-        elif choice not in ["1", "2", "3", "4", "5", "6", "7"]:
-            print(Fore.RED + "❌ Error: Invalid choice. Please enter 1-8.")
+        elif choice not in ["1", "2", "3", "4", "5", "6", "7", "8"]:
+            print(Fore.RED + "❌ Error: Invalid choice. Please enter 1-9.")
 
         # User Story 1: Add and List handlers (MVP)
         elif choice == "1":
@@ -89,6 +90,10 @@ def main():
         # User Story 5: Set Priority handler (Phase II)
         elif choice == "7":
             handle_set_priority()
+
+        # User Story 6: Manage Tags handler (Phase II)
+        elif choice == "8":
+            handle_manage_tags()
 
 
 if __name__ == "__main__":

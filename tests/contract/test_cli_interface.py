@@ -168,7 +168,7 @@ class TestListTodosContract(unittest.TestCase):
         self.assertIn("No todos found.", output)
 
     def test_list_table_header_format(self):
-        """List must display table header with Priority column (Phase II enhanced)."""
+        """List must display table header with Priority and Tags columns (Phase II enhanced)."""
         from storage import add_todo, get_all_todos
         from cli import display_todos
 
@@ -187,8 +187,8 @@ class TestListTodosContract(unittest.TestCase):
         sys.stdout = sys.__stdout__
         output = captured_output.getvalue()
 
-        # Verify Phase II header format includes Priority column
-        self.assertIn("ID | Priority | Status | Title           | Description", output)
+        # Verify Phase II header format includes Priority and Tags columns
+        self.assertIn("ID | Priority | Status | Title           | Tags", output)
         self.assertIn("---|----------|--------|-----------------|------------------", output)
 
     def test_list_incomplete_status_indicator(self):

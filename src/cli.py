@@ -62,23 +62,24 @@ def display_menu() -> None:
     print(Fore.GREEN + "  ✅  5. " + Style.RESET_ALL + "Mark Todo Complete")
     print(Fore.WHITE + "  ⬜  6. " + Style.RESET_ALL + "Mark Todo Incomplete")
     print(Fore.MAGENTA + "  🎯  7. " + Style.RESET_ALL + "Set Priority")
-    print(Fore.CYAN + "  👋  8. " + Style.RESET_ALL + "Exit")
+    print(Fore.BLUE + "  🏷️   8. " + Style.RESET_ALL + "Manage Tags")
+    print(Fore.CYAN + "  👋  9. " + Style.RESET_ALL + "Exit")
     print()
 
 
 def get_menu_choice() -> str:
     """
-    Get user's menu choice (Phase II enhanced - now includes Set Priority).
+    Get user's menu choice (Phase II enhanced - includes Set Priority and Manage Tags).
 
-    Prompts the user with "Enter choice [1-8]: " and returns their input.
+    Prompts the user with "Enter choice [1-9]: " and returns their input.
 
     Returns:
         str: User's menu choice (not validated - validation happens in main loop)
 
     Phase II Enhancement:
-        - Updated prompt from [1-7] to [1-8] to include Set Priority option
+        - Updated prompt from [1-7] to [1-9] to include Set Priority and Manage Tags
     """
-    return input("Enter choice [1-8]: ")
+    return input("Enter choice [1-9]: ")
 
 
 def display_todos(todos: list[dict]) -> None:
@@ -117,8 +118,8 @@ def display_todos(todos: list[dict]) -> None:
     print(Fore.CYAN + Style.BRIGHT + "📋 YOUR TODO LIST:")
     print()
 
-    # Table header (Phase II enhanced with Priority column)
-    print(Fore.MAGENTA + Style.BRIGHT + "ID | Priority | Status | Title           | Description")
+    # Table header (Phase II enhanced with Priority and Tags columns)
+    print(Fore.MAGENTA + Style.BRIGHT + "ID | Priority | Status | Title           | Tags")
     print(Fore.MAGENTA + "---|----------|--------|-----------------|------------------" + Style.RESET_ALL)
 
     # Data rows
@@ -141,14 +142,21 @@ def display_todos(todos: list[dict]) -> None:
             status = Fore.WHITE + "⬜" + Style.RESET_ALL
 
         title = todo["title"]
-        description = todo["description"]
 
-        # Format: ID | Priority | Status | Title | Description
+        # Tags display (Phase II - User Story 6)
+        tags = todo.get("tags", [])
+        if tags:
+            # Display tags in square brackets with color
+            tags_display = " ".join([Fore.CYAN + f"[{tag}]" + Style.RESET_ALL for tag in tags])
+        else:
+            tags_display = ""
+
+        # Format: ID | Priority | Status | Title | Tags
         # Color completed todos differently
         if todo["completed"]:
-            print(f"{Fore.GREEN}{todo_id:<2}{Style.RESET_ALL} | {priority_display:<10} | {status:<6} | {Fore.GREEN}{title:<15}{Style.RESET_ALL} | {Fore.GREEN}{description}{Style.RESET_ALL}")
+            print(f"{Fore.GREEN}{todo_id:<2}{Style.RESET_ALL} | {priority_display:<10} | {status:<6} | {Fore.GREEN}{title:<15}{Style.RESET_ALL} | {tags_display}")
         else:
-            print(f"{Fore.CYAN}{todo_id:<2}{Style.RESET_ALL} | {priority_display:<10} | {status:<6} | {title:<15} | {description}")
+            print(f"{Fore.CYAN}{todo_id:<2}{Style.RESET_ALL} | {priority_display:<10} | {status:<6} | {title:<15} | {tags_display}")
 
     print()  # Empty line after list
 
@@ -370,6 +378,56 @@ def handle_set_priority() -> None:
 
     # Call storage layer
     success, message = update_priority(todo_id, new_priority)
+
+    # Display result with color
+    if success:
+        print(Fore.GREEN + "✅ " + message + Style.RESET_ALL)
+    else:
+        print(Fore.RED + "❌ " + message + Style.RESET_ALL)
+
+
+def handle_manage_tags() -> None:
+    """
+    Handle Manage Tags operation (Phase II - User Story 6).
+
+    Input Prompts:
+        1. "Enter todo ID: "
+        2. "Add or Remove tags? (A/R): "
+        3. "Enter tags (comma-separated): "
+
+    Output:
+        - Success: "Tags added to todo ID N!" or "Tags removed from todo ID N!"
+        - Error: Various validation errors from storage layer
+
+    Flow:
+        1. Prompt for todo ID
+        2. Prompt for action (Add/Remove)
+        3. Prompt for tags
+        4. Call storage.add_tags() or storage.remove_tags()
+        5. Display result message
+    """
+    from storage import add_tags, remove_tags
+
+    # Prompt for ID
+    todo_id = input(Fore.CYAN + "Enter todo ID: " + Style.RESET_ALL)
+
+    # Prompt for action
+    print(Fore.YELLOW + "Actions: " + Fore.GREEN + "A" + Fore.YELLOW + "dd / " +
+          Fore.RED + "R" + Fore.YELLOW + "emove" + Style.RESET_ALL)
+    action = input(Fore.CYAN + "Add or Remove tags? (A/R): " + Style.RESET_ALL).strip().upper()
+
+    # Prompt for tags
+    print(Fore.YELLOW + "💡 Example: work, urgent, personal" + Style.RESET_ALL)
+    tags_input = input(Fore.CYAN + "Enter tags (comma-separated): " + Style.RESET_ALL)
+
+    # Call storage layer based on action
+    if action == "A":
+        success, message = add_tags(todo_id, tags_input)
+    elif action == "R":
+        success, message = remove_tags(todo_id, tags_input)
+    else:
+        print(Fore.RED + "❌ Error: Invalid action. Please enter A or R." + Style.RESET_ALL)
+        return
 
     # Display result with color
     if success:
