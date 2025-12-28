@@ -16,7 +16,9 @@ classifiers = [
 ]
 
 # No runtime dependencies - stdlib only per spec
-dependencies = []
+dependencies = [
+    "colorama>=0.4.6",
+]
 
 [project.optional-dependencies]
 dev = [

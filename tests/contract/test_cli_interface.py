@@ -19,7 +19,7 @@ class TestMenuContract(unittest.TestCase):
     """Test cases for menu display and choice validation."""
 
     def test_menu_displays_exact_format(self):
-        """Menu must display exact format per CLI contract."""
+        """Menu must display colorful format with emojis (Phase II enhanced)."""
         captured_output = io.StringIO()
         sys.stdout = captured_output
 
@@ -28,16 +28,19 @@ class TestMenuContract(unittest.TestCase):
         sys.stdout = sys.__stdout__
         output = captured_output.getvalue()
 
-        # Verify exact menu text per contract
-        self.assertIn("Welcome to Todo Manager", output)
-        self.assertIn("-----------------------", output)
-        self.assertIn("1. Add Todo", output)
-        self.assertIn("2. List All Todos", output)
-        self.assertIn("3. Update Todo", output)
-        self.assertIn("4. Delete Todo", output)
-        self.assertIn("5. Mark Todo Complete", output)
-        self.assertIn("6. Mark Todo Incomplete", output)
-        self.assertIn("7. Exit", output)
+        # Verify enhanced menu text with emojis and colors
+        self.assertIn("WELCOME TO TODO APP", output)
+        self.assertIn("MAIN MENU", output)
+        self.assertIn("Add Todo", output)
+        self.assertIn("List All Todos", output)
+        self.assertIn("Update Todo", output)
+        self.assertIn("Delete Todo", output)
+        self.assertIn("Mark Todo Complete", output)
+        self.assertIn("Mark Todo Incomplete", output)
+        self.assertIn("Exit", output)
+        # Verify numbered menu items exist
+        for i in range(1, 8):
+            self.assertIn(f"{i}.", output)
 
 
 class TestAddTodoContract(unittest.TestCase):
@@ -189,7 +192,7 @@ class TestListTodosContract(unittest.TestCase):
         self.assertIn("---|--------|-----------------|------------------", output)
 
     def test_list_incomplete_status_indicator(self):
-        """Incomplete todos must show status as '[ ]'"""
+        """Incomplete todos must show status as '⬜' (Phase II enhanced)"""
         from storage import add_todo, get_all_todos
         from cli import display_todos
 
@@ -208,11 +211,11 @@ class TestListTodosContract(unittest.TestCase):
         sys.stdout = sys.__stdout__
         output = captured_output.getvalue()
 
-        # Verify incomplete status indicator
-        self.assertIn("[ ]", output)
+        # Verify incomplete status indicator (emoji)
+        self.assertIn("⬜", output)
 
     def test_list_complete_status_indicator(self):
-        """Complete todos must show status as '[X]'"""
+        """Complete todos must show status as '✅' (Phase II enhanced)"""
         from storage import add_todo, mark_complete, get_all_todos
         from cli import display_todos
 
@@ -232,8 +235,8 @@ class TestListTodosContract(unittest.TestCase):
         sys.stdout = sys.__stdout__
         output = captured_output.getvalue()
 
-        # Verify complete status indicator
-        self.assertIn("[X]", output)
+        # Verify complete status indicator (emoji)
+        self.assertIn("✅", output)
 
     def test_list_ordered_by_id_ascending(self):
         """Todos must be displayed ordered by ID ascending."""

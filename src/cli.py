@@ -6,42 +6,62 @@ output formatting according to the CLI interface contract in
 specs/001-cli-todo-app/contracts/cli-interface.md
 
 Functions:
-    display_menu: Display main menu options
+    display_menu: Display main menu options (with colors and emojis)
     get_menu_choice: Get and validate user menu choice
     display_todos: Format and display todo list
     get_user_input: Helper for prompting user input
 """
 
+from colorama import Fore, Back, Style, init
+
+# Initialize colorama for cross-platform color support
+init(autoreset=True)
+
 
 def display_menu() -> None:
     """
-    Display the main menu to the user.
+    Display the main menu to the user with colors and emojis.
 
-    Contract: Must display exact menu format per CLI contract
-    (specs/001-cli-todo-app/contracts/cli-interface.md lines 10-25)
+    Enhanced with:
+        - Colorful welcome banner
+        - Emoji icons for each menu option
+        - Color-coded menu items
 
     Output:
-        Welcome to Todo Manager
-        -----------------------
-        1. Add Todo
-        2. List All Todos
-        3. Update Todo
-        4. Delete Todo
-        5. Mark Todo Complete
-        6. Mark Todo Incomplete
-        7. Exit
+        ╔════════════════════════════════════════╗
+        ║  🎯  WELCOME TO TODO APP  🎯           ║
+        ╚════════════════════════════════════════╝
+
+        📌 MAIN MENU:
+        ➕  1. Add Todo
+        📋  2. List All Todos
+        ✏️   3. Update Todo
+        🗑️   4. Delete Todo
+        ✅  5. Mark Todo Complete
+        ⬜  6. Mark Todo Incomplete
+        👋  7. Exit
 
         Enter choice [1-7]:
     """
-    print("Welcome to Todo Manager")
-    print("-----------------------")
-    print("1. Add Todo")
-    print("2. List All Todos")
-    print("3. Update Todo")
-    print("4. Delete Todo")
-    print("5. Mark Todo Complete")
-    print("6. Mark Todo Incomplete")
-    print("7. Exit")
+    # Colorful banner
+    print()
+    print(Fore.CYAN + Style.BRIGHT + "=" * 45)
+    print(Fore.YELLOW + Style.BRIGHT + "   🎯  WELCOME TO TODO APP  🎯   ")
+    print(Fore.CYAN + Style.BRIGHT + "=" * 45)
+    print(Style.RESET_ALL)
+
+    # Menu header
+    print(Fore.MAGENTA + Style.BRIGHT + "📌 MAIN MENU:")
+    print()
+
+    # Menu options with emojis and colors
+    print(Fore.GREEN + "  ➕  1. " + Style.RESET_ALL + "Add Todo")
+    print(Fore.BLUE + "  📋  2. " + Style.RESET_ALL + "List All Todos")
+    print(Fore.YELLOW + "  ✏️   3. " + Style.RESET_ALL + "Update Todo")
+    print(Fore.RED + "  🗑️   4. " + Style.RESET_ALL + "Delete Todo")
+    print(Fore.GREEN + "  ✅  5. " + Style.RESET_ALL + "Mark Todo Complete")
+    print(Fore.WHITE + "  ⬜  6. " + Style.RESET_ALL + "Mark Todo Incomplete")
+    print(Fore.CYAN + "  👋  7. " + Style.RESET_ALL + "Exit")
     print()
 
 
@@ -62,46 +82,65 @@ def get_menu_choice() -> str:
 
 def display_todos(todos: list[dict]) -> None:
     """
-    Display all todos in formatted table or empty message.
+    Display all todos in formatted table with colors and emojis.
 
     Args:
         todos: List of todo dictionaries (already sorted by ID ascending)
 
-    Output Format (per CLI contract lines 90-111):
-        - Empty list: "No todos found."
-        - Table with header, separator, and data rows
-        - Status: [ ] for incomplete, [X] for complete
-        - Empty description shown as blank
+    Enhanced Output:
+        - Colorful header with emojis
+        - Green ✅ for completed todos
+        - White ⬜ for incomplete todos
+        - Color-coded rows
+        - Empty list message in yellow
 
     Examples:
         Empty list:
-            No todos found.
+            ⚠️  No todos found.
 
         Populated list:
+            📋 YOUR TODO LIST
             ID | Status | Title           | Description
             ---|--------|-----------------|------------------
-            1  | [ ]    | Buy groceries   | Milk, eggs, bread
-            2  | [X]    | Call dentist    | Schedule checkup
-            3  | [ ]    | Write report    |
+            1  | ⬜     | Buy groceries   | Milk, eggs, bread
+            2  | ✅     | Call dentist    | Schedule checkup
+            3  | ⬜     | Write report    |
     """
     # Empty list case
     if not todos:
-        print("No todos found.")
+        print(Fore.YELLOW + "⚠️  No todos found.")
         return
 
+    # List header
+    print()
+    print(Fore.CYAN + Style.BRIGHT + "📋 YOUR TODO LIST:")
+    print()
+
     # Table header
-    print("ID | Status | Title           | Description")
-    print("---|--------|-----------------|------------------")
+    print(Fore.MAGENTA + Style.BRIGHT + "ID | Status | Title           | Description")
+    print(Fore.MAGENTA + "---|--------|-----------------|------------------" + Style.RESET_ALL)
 
     # Data rows
     for todo in todos:
         todo_id = todo["id"]
-        status = "[X]" if todo["completed"] else "[ ]"
+
+        # Use emoji for status
+        if todo["completed"]:
+            status = Fore.GREEN + "✅" + Style.RESET_ALL
+        else:
+            status = Fore.WHITE + "⬜" + Style.RESET_ALL
+
         title = todo["title"]
         description = todo["description"]
 
         # Format: ID | Status | Title | Description
-        print(f"{todo_id:<2} | {status:<6} | {title:<15} | {description}")
+        # Color completed todos differently
+        if todo["completed"]:
+            print(f"{Fore.GREEN}{todo_id:<2}{Style.RESET_ALL} | {status:<6} | {Fore.GREEN}{title:<15}{Style.RESET_ALL} | {Fore.GREEN}{description}{Style.RESET_ALL}")
+        else:
+            print(f"{Fore.CYAN}{todo_id:<2}{Style.RESET_ALL} | {status:<6} | {title:<15} | {description}")
+
+    print()  # Empty line after list
 
 
 def handle_add() -> None:
