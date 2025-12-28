@@ -63,23 +63,24 @@ def display_menu() -> None:
     print(Fore.WHITE + "  ⬜  6. " + Style.RESET_ALL + "Mark Todo Incomplete")
     print(Fore.MAGENTA + "  🎯  7. " + Style.RESET_ALL + "Set Priority")
     print(Fore.BLUE + "  🏷️   8. " + Style.RESET_ALL + "Manage Tags")
-    print(Fore.CYAN + "  👋  9. " + Style.RESET_ALL + "Exit")
+    print(Fore.GREEN + "  🔍  9. " + Style.RESET_ALL + "Search & Filter")
+    print(Fore.CYAN + "  👋  10. " + Style.RESET_ALL + "Exit")
     print()
 
 
 def get_menu_choice() -> str:
     """
-    Get user's menu choice (Phase II enhanced - includes Set Priority and Manage Tags).
+    Get user's menu choice (Phase II enhanced - includes Set Priority, Manage Tags, and Search/Filter).
 
-    Prompts the user with "Enter choice [1-9]: " and returns their input.
+    Prompts the user with "Enter choice [1-10]: " and returns their input.
 
     Returns:
         str: User's menu choice (not validated - validation happens in main loop)
 
     Phase II Enhancement:
-        - Updated prompt from [1-7] to [1-9] to include Set Priority and Manage Tags
+        - Updated prompt from [1-9] to [1-10] to include Search & Filter
     """
-    return input("Enter choice [1-9]: ")
+    return input("Enter choice [1-10]: ")
 
 
 def display_todos(todos: list[dict]) -> None:
@@ -386,6 +387,95 @@ def handle_set_priority() -> None:
         print(Fore.RED + "❌ " + message + Style.RESET_ALL)
 
 
+def handle_search_filter() -> None:
+    """
+    Handle Search and Filter operation (Phase II - User Story 7).
+
+    Interactive menu for searching and filtering todos:
+        1. Search by keyword (title/description)
+        2. Filter by status (complete/incomplete)
+        3. Filter by priority (High/Medium/Low)
+        4. Filter by tag
+        5. Combined filters (chainable)
+
+    Flow:
+        1. Display filter options menu
+        2. Get user selections
+        3. Apply filters in sequence
+        4. Display filtered results
+    """
+    from storage import get_all_todos, search_todos, filter_by_status, filter_by_priority, filter_by_tag
+
+    print()
+    print(Fore.CYAN + Style.BRIGHT + "🔍 SEARCH & FILTER" + Style.RESET_ALL)
+    print()
+
+    # Start with all todos
+    results = get_all_todos()
+
+    # Search by keyword
+    print(Fore.YELLOW + "Search by keyword (leave blank to skip): " + Style.RESET_ALL)
+    keyword = input(Fore.CYAN + "Enter keyword: " + Style.RESET_ALL).strip()
+
+    if keyword:
+        results = search_todos(keyword)
+        print(Fore.GREEN + f"✓ Searching for '{keyword}'" + Style.RESET_ALL)
+
+    # Filter by status
+    print()
+    print(Fore.YELLOW + "Filter by status? (Y/N): " + Style.RESET_ALL, end="")
+    filter_status = input().strip().upper()
+
+    if filter_status == "Y":
+        print(Fore.YELLOW + "Status options: " + Fore.GREEN + "C" + Fore.YELLOW + "omplete / " +
+              Fore.WHITE + "I" + Fore.YELLOW + "ncomplete" + Style.RESET_ALL)
+        status_choice = input(Fore.CYAN + "Enter choice (C/I): " + Style.RESET_ALL).strip().upper()
+
+        if status_choice == "C":
+            results = filter_by_status(results, True)
+            print(Fore.GREEN + "✓ Showing completed todos" + Style.RESET_ALL)
+        elif status_choice == "I":
+            results = filter_by_status(results, False)
+            print(Fore.GREEN + "✓ Showing incomplete todos" + Style.RESET_ALL)
+
+    # Filter by priority
+    print()
+    print(Fore.YELLOW + "Filter by priority? (Y/N): " + Style.RESET_ALL, end="")
+    filter_priority = input().strip().upper()
+
+    if filter_priority == "Y":
+        print(Fore.YELLOW + "Priority options: " + Fore.RED + "H" + Fore.YELLOW + "igh / " +
+              Fore.YELLOW + "M" + Fore.YELLOW + "edium / " + Fore.BLUE + "L" + Fore.YELLOW + "ow" + Style.RESET_ALL)
+        priority_choice = input(Fore.CYAN + "Enter choice (H/M/L): " + Style.RESET_ALL).strip().upper()
+
+        if priority_choice == "H":
+            results = filter_by_priority(results, "High")
+            print(Fore.GREEN + "✓ Showing High priority todos" + Style.RESET_ALL)
+        elif priority_choice == "M":
+            results = filter_by_priority(results, "Medium")
+            print(Fore.GREEN + "✓ Showing Medium priority todos" + Style.RESET_ALL)
+        elif priority_choice == "L":
+            results = filter_by_priority(results, "Low")
+            print(Fore.GREEN + "✓ Showing Low priority todos" + Style.RESET_ALL)
+
+    # Filter by tag
+    print()
+    print(Fore.YELLOW + "Filter by tag? (Y/N): " + Style.RESET_ALL, end="")
+    filter_tag = input().strip().upper()
+
+    if filter_tag == "Y":
+        tag = input(Fore.CYAN + "Enter tag: " + Style.RESET_ALL).strip()
+        if tag:
+            results = filter_by_tag(results, tag)
+            print(Fore.GREEN + f"✓ Showing todos tagged with '{tag}'" + Style.RESET_ALL)
+
+    # Display filtered results
+    print()
+    print(Fore.CYAN + Style.BRIGHT + f"📊 FILTERED RESULTS ({len(results)} todos):" + Style.RESET_ALL)
+    print()
+    display_todos(results)
+
+
 def handle_manage_tags() -> None:
     """
     Handle Manage Tags operation (Phase II - User Story 6).
@@ -434,3 +524,92 @@ def handle_manage_tags() -> None:
         print(Fore.GREEN + "✅ " + message + Style.RESET_ALL)
     else:
         print(Fore.RED + "❌ " + message + Style.RESET_ALL)
+
+
+def handle_search_filter() -> None:
+    """
+    Handle Search and Filter operation (Phase II - User Story 7).
+
+    Interactive menu for searching and filtering todos:
+        1. Search by keyword (title/description)
+        2. Filter by status (complete/incomplete)
+        3. Filter by priority (High/Medium/Low)
+        4. Filter by tag
+        5. Combined filters (chainable)
+
+    Flow:
+        1. Display filter options menu
+        2. Get user selections
+        3. Apply filters in sequence
+        4. Display filtered results
+    """
+    from storage import get_all_todos, search_todos, filter_by_status, filter_by_priority, filter_by_tag
+
+    print()
+    print(Fore.CYAN + Style.BRIGHT + "🔍 SEARCH & FILTER" + Style.RESET_ALL)
+    print()
+
+    # Start with all todos
+    results = get_all_todos()
+
+    # Search by keyword
+    print(Fore.YELLOW + "Search by keyword (leave blank to skip): " + Style.RESET_ALL)
+    keyword = input(Fore.CYAN + "Enter keyword: " + Style.RESET_ALL).strip()
+
+    if keyword:
+        results = search_todos(keyword)
+        print(Fore.GREEN + f"✓ Searching for '{keyword}'" + Style.RESET_ALL)
+
+    # Filter by status
+    print()
+    print(Fore.YELLOW + "Filter by status? (Y/N): " + Style.RESET_ALL, end="")
+    filter_status = input().strip().upper()
+
+    if filter_status == "Y":
+        print(Fore.YELLOW + "Status options: " + Fore.GREEN + "C" + Fore.YELLOW + "omplete / " +
+              Fore.WHITE + "I" + Fore.YELLOW + "ncomplete" + Style.RESET_ALL)
+        status_choice = input(Fore.CYAN + "Enter choice (C/I): " + Style.RESET_ALL).strip().upper()
+
+        if status_choice == "C":
+            results = filter_by_status(results, True)
+            print(Fore.GREEN + "✓ Showing completed todos" + Style.RESET_ALL)
+        elif status_choice == "I":
+            results = filter_by_status(results, False)
+            print(Fore.GREEN + "✓ Showing incomplete todos" + Style.RESET_ALL)
+
+    # Filter by priority
+    print()
+    print(Fore.YELLOW + "Filter by priority? (Y/N): " + Style.RESET_ALL, end="")
+    filter_priority = input().strip().upper()
+
+    if filter_priority == "Y":
+        print(Fore.YELLOW + "Priority options: " + Fore.RED + "H" + Fore.YELLOW + "igh / " +
+              Fore.YELLOW + "M" + Fore.YELLOW + "edium / " + Fore.BLUE + "L" + Fore.YELLOW + "ow" + Style.RESET_ALL)
+        priority_choice = input(Fore.CYAN + "Enter choice (H/M/L): " + Style.RESET_ALL).strip().upper()
+
+        if priority_choice == "H":
+            results = filter_by_priority(results, "High")
+            print(Fore.GREEN + "✓ Showing High priority todos" + Style.RESET_ALL)
+        elif priority_choice == "M":
+            results = filter_by_priority(results, "Medium")
+            print(Fore.GREEN + "✓ Showing Medium priority todos" + Style.RESET_ALL)
+        elif priority_choice == "L":
+            results = filter_by_priority(results, "Low")
+            print(Fore.GREEN + "✓ Showing Low priority todos" + Style.RESET_ALL)
+
+    # Filter by tag
+    print()
+    print(Fore.YELLOW + "Filter by tag? (Y/N): " + Style.RESET_ALL, end="")
+    filter_tag = input().strip().upper()
+
+    if filter_tag == "Y":
+        tag = input(Fore.CYAN + "Enter tag: " + Style.RESET_ALL).strip()
+        if tag:
+            results = filter_by_tag(results, tag)
+            print(Fore.GREEN + f"✓ Showing todos tagged with '{tag}'" + Style.RESET_ALL)
+
+    # Display filtered results
+    print()
+    print(Fore.CYAN + Style.BRIGHT + f"📊 FILTERED RESULTS ({len(results)} todos):" + Style.RESET_ALL)
+    print()
+    display_todos(results)

@@ -617,3 +617,142 @@ def remove_tags(todo_id: any, tags_to_remove: str | list[str]) -> tuple[bool, st
 
     # Return success
     return (True, f"Tags removed from todo ID {parsed_id}!")
+
+
+def search_todos(keyword: str) -> list[dict]:
+    """
+    Search todos by keyword in title and description (Phase II - User Story 7).
+
+    Args:
+        keyword: Search keyword (case-insensitive)
+
+    Returns:
+        list[dict]: List of todos matching the keyword
+
+    Behavior:
+        - Searches both title and description fields
+        - Case-insensitive matching
+        - Partial matches allowed (substring search)
+        - Empty keyword returns all todos
+        - Returns empty list if no matches
+
+    Examples:
+        >>> add_todo("Buy groceries", "Milk, eggs")
+        >>> add_todo("Call dentist", "Schedule checkup")
+        >>> results = search_todos("buy")
+        >>> len(results)
+        1
+        >>> results[0]["title"]
+        'Buy groceries'
+    """
+    # Empty keyword returns all todos
+    if not keyword or keyword.strip() == "":
+        return get_all_todos()
+
+    # Normalize keyword to lowercase for case-insensitive search
+    keyword_lower = keyword.lower()
+
+    # Filter todos by keyword match in title or description
+    results = []
+    for todo in get_all_todos():
+        title_lower = todo["title"].lower()
+        description_lower = todo["description"].lower()
+
+        # Check if keyword appears in title or description
+        if keyword_lower in title_lower or keyword_lower in description_lower:
+            results.append(todo)
+
+    return results
+
+
+def filter_by_status(todos: list[dict], completed: bool) -> list[dict]:
+    """
+    Filter todos by completion status (Phase II - User Story 7).
+
+    Args:
+        todos: List of todos to filter
+        completed: True for completed todos, False for incomplete
+
+    Returns:
+        list[dict]: Filtered list of todos
+
+    Behavior:
+        - Pure function: doesn't modify input list
+        - Returns todos matching the specified status
+        - Empty input returns empty list
+
+    Examples:
+        >>> todos = get_all_todos()
+        >>> incomplete = filter_by_status(todos, False)
+        >>> completed = filter_by_status(todos, True)
+    """
+    return [todo for todo in todos if todo["completed"] == completed]
+
+
+def filter_by_priority(todos: list[dict], priority: str) -> list[dict]:
+    """
+    Filter todos by priority level (Phase II - User Story 7).
+
+    Args:
+        todos: List of todos to filter
+        priority: Priority level ("High", "Medium", "Low") - case-insensitive
+
+    Returns:
+        list[dict]: Filtered list of todos
+
+    Behavior:
+        - Pure function: doesn't modify input list
+        - Case-insensitive priority matching
+        - Returns todos matching the specified priority
+        - Empty input returns empty list
+
+    Examples:
+        >>> todos = get_all_todos()
+        >>> high_priority = filter_by_priority(todos, "High")
+        >>> medium_priority = filter_by_priority(todos, "medium")
+    """
+    # Normalize priority to lowercase for case-insensitive comparison
+    priority_lower = priority.lower()
+
+    return [
+        todo for todo in todos
+        if todo.get("priority", "Medium").lower() == priority_lower
+    ]
+
+
+def filter_by_tag(todos: list[dict], tag: str) -> list[dict]:
+    """
+    Filter todos by tag (Phase II - User Story 7).
+
+    Args:
+        todos: List of todos to filter
+        tag: Tag to filter by (case-insensitive)
+
+    Returns:
+        list[dict]: Filtered list of todos
+
+    Behavior:
+        - Pure function: doesn't modify input list
+        - Case-insensitive tag matching
+        - Returns todos that have the specified tag
+        - Empty input returns empty list
+        - Handles todos without tags field
+
+    Examples:
+        >>> todos = get_all_todos()
+        >>> work_todos = filter_by_tag(todos, "work")
+        >>> urgent_todos = filter_by_tag(todos, "URGENT")
+    """
+    # Normalize tag to lowercase for case-insensitive comparison
+    tag_lower = tag.lower()
+
+    results = []
+    for todo in todos:
+        # Get tags list (default to empty list if missing)
+        todo_tags = todo.get("tags", [])
+
+        # Check if tag exists in todo's tags (case-insensitive)
+        if tag_lower in todo_tags:
+            results.append(todo)
+
+    return results
