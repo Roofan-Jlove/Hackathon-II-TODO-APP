@@ -673,5 +673,205 @@ class TestCombinedFilters(unittest.TestCase):
         self.assertEqual(results[0]["title"], "Write work report")
 
 
+class TestSortByTitle(unittest.TestCase):
+    """Test cases for sort_by_title function (Phase II - User Story 8)."""
+
+    def setUp(self):
+        """Reset storage and add test data."""
+        storage.todos.clear()
+        storage.next_id = 1
+
+        # Add todos in random order
+        add_todo("Zebra task", "Last alphabetically")
+        add_todo("Apple task", "First alphabetically")
+        add_todo("Middle task", "In the middle")
+        add_todo("Banana task", "Second alphabetically")
+
+    def test_sort_by_title_ascending(self):
+        """Should sort todos alphabetically A-Z."""
+        from storage import sort_by_title
+        todos = get_all_todos()
+        sorted_todos = sort_by_title(todos, ascending=True)
+
+        self.assertEqual(len(sorted_todos), 4)
+        self.assertEqual(sorted_todos[0]["title"], "Apple task")
+        self.assertEqual(sorted_todos[1]["title"], "Banana task")
+        self.assertEqual(sorted_todos[2]["title"], "Middle task")
+        self.assertEqual(sorted_todos[3]["title"], "Zebra task")
+
+    def test_sort_by_title_descending(self):
+        """Should sort todos alphabetically Z-A."""
+        from storage import sort_by_title
+        todos = get_all_todos()
+        sorted_todos = sort_by_title(todos, ascending=False)
+
+        self.assertEqual(len(sorted_todos), 4)
+        self.assertEqual(sorted_todos[0]["title"], "Zebra task")
+        self.assertEqual(sorted_todos[1]["title"], "Middle task")
+        self.assertEqual(sorted_todos[2]["title"], "Banana task")
+        self.assertEqual(sorted_todos[3]["title"], "Apple task")
+
+    def test_sort_by_title_case_insensitive(self):
+        """Should sort case-insensitively."""
+        storage.todos.clear()
+        storage.next_id = 1
+
+        add_todo("zebra", "lowercase z")
+        add_todo("Apple", "capital A")
+        add_todo("MIDDLE", "all caps")
+
+        from storage import sort_by_title
+        todos = get_all_todos()
+        sorted_todos = sort_by_title(todos, ascending=True)
+
+        self.assertEqual(sorted_todos[0]["title"], "Apple")
+        self.assertEqual(sorted_todos[1]["title"], "MIDDLE")
+        self.assertEqual(sorted_todos[2]["title"], "zebra")
+
+
+class TestSortByPriority(unittest.TestCase):
+    """Test cases for sort_by_priority function (Phase II - User Story 8)."""
+
+    def setUp(self):
+        """Reset storage and add test data."""
+        storage.todos.clear()
+        storage.next_id = 1
+
+        # Add todos with different priorities
+        add_todo("Low priority task", "")
+        add_todo("High priority task", "")
+        add_todo("Medium priority task", "")
+        add_todo("Another high task", "")
+
+        from storage import update_priority
+        update_priority(1, "Low")
+        update_priority(2, "High")
+        update_priority(3, "Medium")
+        update_priority(4, "High")
+
+    def test_sort_by_priority_high_to_low(self):
+        """Should sort by priority: High → Medium → Low."""
+        from storage import sort_by_priority
+        todos = get_all_todos()
+        sorted_todos = sort_by_priority(todos, high_first=True)
+
+        self.assertEqual(len(sorted_todos), 4)
+        # First two should be High priority
+        self.assertEqual(sorted_todos[0]["priority"], "High")
+        self.assertEqual(sorted_todos[1]["priority"], "High")
+        # Third should be Medium
+        self.assertEqual(sorted_todos[2]["priority"], "Medium")
+        # Last should be Low
+        self.assertEqual(sorted_todos[3]["priority"], "Low")
+
+    def test_sort_by_priority_low_to_high(self):
+        """Should sort by priority: Low → Medium → High."""
+        from storage import sort_by_priority
+        todos = get_all_todos()
+        sorted_todos = sort_by_priority(todos, high_first=False)
+
+        self.assertEqual(len(sorted_todos), 4)
+        # First should be Low
+        self.assertEqual(sorted_todos[0]["priority"], "Low")
+        # Second should be Medium
+        self.assertEqual(sorted_todos[1]["priority"], "Medium")
+        # Last two should be High
+        self.assertEqual(sorted_todos[2]["priority"], "High")
+        self.assertEqual(sorted_todos[3]["priority"], "High")
+
+
+class TestSortByCreatedDate(unittest.TestCase):
+    """Test cases for sort_by_created_date function (Phase II - User Story 8)."""
+
+    def setUp(self):
+        """Reset storage and add test data with different timestamps."""
+        import time
+        storage.todos.clear()
+        storage.next_id = 1
+
+        # Add todos with slight delays to ensure different timestamps
+        add_todo("First todo", "")
+        time.sleep(0.01)
+        add_todo("Second todo", "")
+        time.sleep(0.01)
+        add_todo("Third todo", "")
+        time.sleep(0.01)
+        add_todo("Fourth todo", "")
+
+    def test_sort_by_created_date_newest_first(self):
+        """Should sort by created date with newest first."""
+        from storage import sort_by_created_date
+        todos = get_all_todos()
+        sorted_todos = sort_by_created_date(todos, newest_first=True)
+
+        self.assertEqual(len(sorted_todos), 4)
+        # Newest should be first
+        self.assertEqual(sorted_todos[0]["title"], "Fourth todo")
+        self.assertEqual(sorted_todos[1]["title"], "Third todo")
+        self.assertEqual(sorted_todos[2]["title"], "Second todo")
+        self.assertEqual(sorted_todos[3]["title"], "First todo")
+
+    def test_sort_by_created_date_oldest_first(self):
+        """Should sort by created date with oldest first."""
+        from storage import sort_by_created_date
+        todos = get_all_todos()
+        sorted_todos = sort_by_created_date(todos, newest_first=False)
+
+        self.assertEqual(len(sorted_todos), 4)
+        # Oldest should be first
+        self.assertEqual(sorted_todos[0]["title"], "First todo")
+        self.assertEqual(sorted_todos[1]["title"], "Second todo")
+        self.assertEqual(sorted_todos[2]["title"], "Third todo")
+        self.assertEqual(sorted_todos[3]["title"], "Fourth todo")
+
+
+class TestSortByStatus(unittest.TestCase):
+    """Test cases for sort_by_status function (Phase II - User Story 8)."""
+
+    def setUp(self):
+        """Reset storage and add test data."""
+        storage.todos.clear()
+        storage.next_id = 1
+
+        # Add todos with different statuses
+        add_todo("Incomplete task 1", "")
+        add_todo("Completed task 1", "")
+        add_todo("Incomplete task 2", "")
+        add_todo("Completed task 2", "")
+
+        # Mark some as complete
+        from storage import mark_complete
+        mark_complete(2)
+        mark_complete(4)
+
+    def test_sort_by_status_incomplete_first(self):
+        """Should sort with incomplete todos first."""
+        from storage import sort_by_status
+        todos = get_all_todos()
+        sorted_todos = sort_by_status(todos, incomplete_first=True)
+
+        self.assertEqual(len(sorted_todos), 4)
+        # First two should be incomplete
+        self.assertFalse(sorted_todos[0]["completed"])
+        self.assertFalse(sorted_todos[1]["completed"])
+        # Last two should be complete
+        self.assertTrue(sorted_todos[2]["completed"])
+        self.assertTrue(sorted_todos[3]["completed"])
+
+    def test_sort_by_status_completed_first(self):
+        """Should sort with completed todos first."""
+        from storage import sort_by_status
+        todos = get_all_todos()
+        sorted_todos = sort_by_status(todos, incomplete_first=False)
+
+        self.assertEqual(len(sorted_todos), 4)
+        # First two should be complete
+        self.assertTrue(sorted_todos[0]["completed"])
+        self.assertTrue(sorted_todos[1]["completed"])
+        # Last two should be incomplete
+        self.assertFalse(sorted_todos[2]["completed"])
+        self.assertFalse(sorted_todos[3]["completed"])
+
+
 if __name__ == "__main__":
     unittest.main()

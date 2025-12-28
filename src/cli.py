@@ -64,23 +64,24 @@ def display_menu() -> None:
     print(Fore.MAGENTA + "  🎯  7. " + Style.RESET_ALL + "Set Priority")
     print(Fore.BLUE + "  🏷️   8. " + Style.RESET_ALL + "Manage Tags")
     print(Fore.GREEN + "  🔍  9. " + Style.RESET_ALL + "Search & Filter")
-    print(Fore.CYAN + "  👋  10. " + Style.RESET_ALL + "Exit")
+    print(Fore.MAGENTA + "  🔀  10. " + Style.RESET_ALL + "Sort")
+    print(Fore.CYAN + "  👋  11. " + Style.RESET_ALL + "Exit")
     print()
 
 
 def get_menu_choice() -> str:
     """
-    Get user's menu choice (Phase II enhanced - includes Set Priority, Manage Tags, and Search/Filter).
+    Get user's menu choice (Phase II enhanced - includes Set Priority, Manage Tags, Search/Filter, and Sort).
 
-    Prompts the user with "Enter choice [1-10]: " and returns their input.
+    Prompts the user with "Enter choice [1-11]: " and returns their input.
 
     Returns:
         str: User's menu choice (not validated - validation happens in main loop)
 
     Phase II Enhancement:
-        - Updated prompt from [1-9] to [1-10] to include Search & Filter
+        - Updated prompt from [1-10] to [1-11] to include Sort
     """
-    return input("Enter choice [1-10]: ")
+    return input("Enter choice [1-11]: ")
 
 
 def display_todos(todos: list[dict]) -> None:
@@ -613,3 +614,117 @@ def handle_search_filter() -> None:
     print(Fore.CYAN + Style.BRIGHT + f"📊 FILTERED RESULTS ({len(results)} todos):" + Style.RESET_ALL)
     print()
     display_todos(results)
+
+
+def handle_sort() -> None:
+    """
+    Handle Sort operation (Phase II - User Story 8).
+
+    Interactive menu for sorting todos:
+        1. Sort by title (A-Z or Z-A)
+        2. Sort by priority (High→Low or Low→High)
+        3. Sort by created date (Newest or Oldest first)
+        4. Sort by status (Incomplete or Completed first)
+
+    Flow:
+        1. Display sort options menu
+        2. Get user selection
+        3. Apply selected sort
+        4. Display sorted results
+    """
+    from storage import get_all_todos, sort_by_title, sort_by_priority, sort_by_created_date, sort_by_status
+
+    print()
+    print(Fore.CYAN + Style.BRIGHT + "🔀 SORT TODOS" + Style.RESET_ALL)
+    print()
+
+    # Get all todos
+    todos = get_all_todos()
+
+    # Display sort options
+    print(Fore.YELLOW + "Sort by:" + Style.RESET_ALL)
+    print(Fore.GREEN + "  1. " + Style.RESET_ALL + "Title (A-Z or Z-A)")
+    print(Fore.MAGENTA + "  2. " + Style.RESET_ALL + "Priority (High→Low or Low→High)")
+    print(Fore.BLUE + "  3. " + Style.RESET_ALL + "Created Date (Newest or Oldest)")
+    print(Fore.WHITE + "  4. " + Style.RESET_ALL + "Status (Incomplete or Completed first)")
+    print()
+
+    # Get sort choice
+    sort_choice = input(Fore.CYAN + "Enter choice [1-4]: " + Style.RESET_ALL).strip()
+
+    sorted_todos = None
+
+    # Sort by title
+    if sort_choice == "1":
+        print(Fore.YELLOW + "Order: " + Fore.GREEN + "A" + Fore.YELLOW + "-Z / " +
+              Fore.RED + "Z" + Fore.YELLOW + "-A" + Style.RESET_ALL)
+        order = input(Fore.CYAN + "Enter choice (A/Z): " + Style.RESET_ALL).strip().upper()
+
+        if order == "A":
+            sorted_todos = sort_by_title(todos, ascending=True)
+            print(Fore.GREEN + "✓ Sorted alphabetically A-Z" + Style.RESET_ALL)
+        elif order == "Z":
+            sorted_todos = sort_by_title(todos, ascending=False)
+            print(Fore.GREEN + "✓ Sorted alphabetically Z-A" + Style.RESET_ALL)
+        else:
+            print(Fore.RED + "❌ Invalid choice" + Style.RESET_ALL)
+            return
+
+    # Sort by priority
+    elif sort_choice == "2":
+        print(Fore.YELLOW + "Order: " + Fore.RED + "H" + Fore.YELLOW + "igh→Low / " +
+              Fore.BLUE + "L" + Fore.YELLOW + "ow→High" + Style.RESET_ALL)
+        order = input(Fore.CYAN + "Enter choice (H/L): " + Style.RESET_ALL).strip().upper()
+
+        if order == "H":
+            sorted_todos = sort_by_priority(todos, high_first=True)
+            print(Fore.GREEN + "✓ Sorted by priority: High → Medium → Low" + Style.RESET_ALL)
+        elif order == "L":
+            sorted_todos = sort_by_priority(todos, high_first=False)
+            print(Fore.GREEN + "✓ Sorted by priority: Low → Medium → High" + Style.RESET_ALL)
+        else:
+            print(Fore.RED + "❌ Invalid choice" + Style.RESET_ALL)
+            return
+
+    # Sort by created date
+    elif sort_choice == "3":
+        print(Fore.YELLOW + "Order: " + Fore.GREEN + "N" + Fore.YELLOW + "ewest first / " +
+              Fore.BLUE + "O" + Fore.YELLOW + "ldest first" + Style.RESET_ALL)
+        order = input(Fore.CYAN + "Enter choice (N/O): " + Style.RESET_ALL).strip().upper()
+
+        if order == "N":
+            sorted_todos = sort_by_created_date(todos, newest_first=True)
+            print(Fore.GREEN + "✓ Sorted by date: Newest first" + Style.RESET_ALL)
+        elif order == "O":
+            sorted_todos = sort_by_created_date(todos, newest_first=False)
+            print(Fore.GREEN + "✓ Sorted by date: Oldest first" + Style.RESET_ALL)
+        else:
+            print(Fore.RED + "❌ Invalid choice" + Style.RESET_ALL)
+            return
+
+    # Sort by status
+    elif sort_choice == "4":
+        print(Fore.YELLOW + "Order: " + Fore.WHITE + "I" + Fore.YELLOW + "ncomplete first / " +
+              Fore.GREEN + "C" + Fore.YELLOW + "ompleted first" + Style.RESET_ALL)
+        order = input(Fore.CYAN + "Enter choice (I/C): " + Style.RESET_ALL).strip().upper()
+
+        if order == "I":
+            sorted_todos = sort_by_status(todos, incomplete_first=True)
+            print(Fore.GREEN + "✓ Sorted by status: Incomplete first" + Style.RESET_ALL)
+        elif order == "C":
+            sorted_todos = sort_by_status(todos, incomplete_first=False)
+            print(Fore.GREEN + "✓ Sorted by status: Completed first" + Style.RESET_ALL)
+        else:
+            print(Fore.RED + "❌ Invalid choice" + Style.RESET_ALL)
+            return
+
+    else:
+        print(Fore.RED + "❌ Invalid choice. Please enter 1-4." + Style.RESET_ALL)
+        return
+
+    # Display sorted results
+    if sorted_todos is not None:
+        print()
+        print(Fore.CYAN + Style.BRIGHT + f"📊 SORTED RESULTS ({len(sorted_todos)} todos):" + Style.RESET_ALL)
+        print()
+        display_todos(sorted_todos)

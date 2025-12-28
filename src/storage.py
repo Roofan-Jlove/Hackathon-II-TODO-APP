@@ -756,3 +756,110 @@ def filter_by_tag(todos: list[dict], tag: str) -> list[dict]:
             results.append(todo)
 
     return results
+
+
+def sort_by_title(todos: list[dict], ascending: bool = True) -> list[dict]:
+    """
+    Sort todos alphabetically by title (Phase II - User Story 8).
+
+    Args:
+        todos: List of todos to sort
+        ascending: True for A-Z, False for Z-A (default: True)
+
+    Returns:
+        list[dict]: Sorted list of todos
+
+    Behavior:
+        - Pure function: doesn't modify input list
+        - Case-insensitive sorting
+        - Alphabetical order (A-Z or Z-A)
+
+    Examples:
+        >>> todos = get_all_todos()
+        >>> sorted_asc = sort_by_title(todos, ascending=True)
+        >>> sorted_desc = sort_by_title(todos, ascending=False)
+    """
+    return sorted(todos, key=lambda todo: todo["title"].lower(), reverse=not ascending)
+
+
+def sort_by_priority(todos: list[dict], high_first: bool = True) -> list[dict]:
+    """
+    Sort todos by priority level (Phase II - User Story 8).
+
+    Args:
+        todos: List of todos to sort
+        high_first: True for High→Medium→Low, False for Low→Medium→High (default: True)
+
+    Returns:
+        list[dict]: Sorted list of todos
+
+    Behavior:
+        - Pure function: doesn't modify input list
+        - Priority order: High (1) → Medium (2) → Low (3)
+        - Reverse priority order: Low (3) → Medium (2) → High (1)
+
+    Examples:
+        >>> todos = get_all_todos()
+        >>> high_first = sort_by_priority(todos, high_first=True)
+        >>> low_first = sort_by_priority(todos, high_first=False)
+    """
+    # Priority ranking for sorting
+    priority_rank = {"High": 1, "Medium": 2, "Low": 3}
+
+    # Get priority rank, default to Medium if missing
+    def get_priority_rank(todo):
+        priority = todo.get("priority", "Medium")
+        return priority_rank.get(priority, 2)
+
+    return sorted(todos, key=get_priority_rank, reverse=not high_first)
+
+
+def sort_by_created_date(todos: list[dict], newest_first: bool = True) -> list[dict]:
+    """
+    Sort todos by creation date (Phase II - User Story 8).
+
+    Args:
+        todos: List of todos to sort
+        newest_first: True for newest first, False for oldest first (default: True)
+
+    Returns:
+        list[dict]: Sorted list of todos
+
+    Behavior:
+        - Pure function: doesn't modify input list
+        - Sorts by created_at timestamp
+        - Newest first (descending) or oldest first (ascending)
+
+    Examples:
+        >>> todos = get_all_todos()
+        >>> newest = sort_by_created_date(todos, newest_first=True)
+        >>> oldest = sort_by_created_date(todos, newest_first=False)
+    """
+    return sorted(todos, key=lambda todo: todo.get("created_at"), reverse=newest_first)
+
+
+def sort_by_status(todos: list[dict], incomplete_first: bool = True) -> list[dict]:
+    """
+    Sort todos by completion status (Phase II - User Story 8).
+
+    Args:
+        todos: List of todos to sort
+        incomplete_first: True for incomplete first, False for completed first (default: True)
+
+    Returns:
+        list[dict]: Sorted list of todos
+
+    Behavior:
+        - Pure function: doesn't modify input list
+        - Incomplete (False) first or completed (True) first
+        - Within same status, maintains original order
+
+    Examples:
+        >>> todos = get_all_todos()
+        >>> incomplete_first = sort_by_status(todos, incomplete_first=True)
+        >>> completed_first = sort_by_status(todos, incomplete_first=False)
+    """
+    # Convert boolean to sort key: False (incomplete) = 0, True (complete) = 1
+    # If incomplete_first=True: incomplete (0) comes before complete (1)
+    # If incomplete_first=False: complete (1) comes before incomplete (0) → reverse
+    return sorted(todos, key=lambda todo: todo["completed"], reverse=not incomplete_first)
