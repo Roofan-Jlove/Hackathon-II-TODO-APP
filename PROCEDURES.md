@@ -10,18 +10,302 @@
 
 ## 📑 Table of Contents
 
-1. [Installation & Setup](#installation--setup)
-2. [Development Workflow](#development-workflow)
-3. [Testing Procedures](#testing-procedures)
-4. [Release Procedures](#release-procedures)
-5. [GitHub Release Creation](#github-release-creation)
-6. [Deployment](#deployment)
-7. [Maintenance](#maintenance)
-8. [Troubleshooting](#troubleshooting)
+1. [For End Users - Download & Run](#for-end-users---download--run)
+2. [For Developers - Installation & Setup](#for-developers---installation--setup)
+3. [Development Workflow](#development-workflow)
+4. [Testing Procedures](#testing-procedures)
+5. [Release Procedures](#release-procedures)
+6. [GitHub Release Creation](#github-release-creation)
+7. [Deployment](#deployment)
+8. [Maintenance](#maintenance)
+9. [Troubleshooting](#troubleshooting)
 
 ---
 
-## 🚀 Installation & Setup
+## 👥 For End Users - Download & Run
+
+> **Quick Start for Users** - No Git or development setup needed!
+
+If you just want to **use** the TODO Manager app without setting up a development environment, follow these simple steps:
+
+### Option 1: Download from GitHub Releases (Recommended)
+
+#### Step 1: Download the Release
+
+**Direct Download Links:**
+- **Latest Release (v1.0.0)**: https://github.com/Roofan-Jlove/Hackathon-II-TODO-APP/releases/latest
+- **Specific Version**: https://github.com/Roofan-Jlove/Hackathon-II-TODO-APP/releases/tag/v1.0.0
+
+**Download Options:**
+- Click **"Source code (zip)"** for Windows users
+- Click **"Source code (tar.gz)"** for macOS/Linux users
+
+Or use direct download links:
+- **ZIP**: https://github.com/Roofan-Jlove/Hackathon-II-TODO-APP/archive/refs/tags/v1.0.0.zip
+- **TAR.GZ**: https://github.com/Roofan-Jlove/Hackathon-II-TODO-APP/archive/refs/tags/v1.0.0.tar.gz
+
+#### Step 2: Extract the Archive
+
+**Windows:**
+```powershell
+# Right-click the downloaded ZIP file
+# Select "Extract All..."
+# Choose destination folder
+# Click "Extract"
+
+# Or using PowerShell
+Expand-Archive -Path "Hackathon-II-TODO-APP-1.0.0.zip" -DestinationPath "C:\TODO-APP"
+```
+
+**macOS:**
+```bash
+# Double-click the downloaded tar.gz file
+# Or use Terminal:
+tar -xzf Hackathon-II-TODO-APP-1.0.0.tar.gz
+cd Hackathon-II-TODO-APP-1.0.0
+```
+
+**Linux:**
+```bash
+tar -xzf Hackathon-II-TODO-APP-1.0.0.tar.gz
+cd Hackathon-II-TODO-APP-1.0.0
+```
+
+#### Step 3: Install Prerequisites
+
+You need **Python 3.13+** and **UV package manager**.
+
+**A. Install Python 3.13+**
+
+**Windows:**
+- Download from: https://www.python.org/downloads/
+- Or use: `winget install Python.Python.3.13`
+
+**macOS:**
+```bash
+brew install python@3.13
+```
+
+**Linux (Ubuntu/Debian):**
+```bash
+sudo apt update
+sudo apt install python3.13 python3.13-venv
+```
+
+**Verify Python:**
+```bash
+python --version
+# Should show: Python 3.13.x or higher
+```
+
+**B. Install UV Package Manager**
+
+**Windows:**
+```powershell
+powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+**macOS/Linux:**
+```bash
+curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+**Verify UV:**
+```bash
+uv --version
+# Should show: uv x.x.x
+```
+
+#### Step 4: Install Dependencies
+
+Navigate to the extracted folder and install:
+
+```bash
+# Change to the app directory
+cd Hackathon-II-TODO-APP-1.0.0
+
+# Install dependencies (UV creates virtual environment automatically)
+uv sync
+```
+
+This will:
+- Create a virtual environment (`.venv`)
+- Install all required packages (colorama, python-dateutil)
+- Set up the app ready to run
+
+#### Step 5: Run the Application
+
+```bash
+# Run the TODO Manager
+uv run python src/main.py
+```
+
+**You should see:**
+```
+╔════════════════════════════════════════════════════════════╗
+║          📋 TODO MANAGER - MAIN MENU                       ║
+╚════════════════════════════════════════════════════════════╝
+
+  ➕  1. Add Todo
+  📋  2. List All Todos
+  ...
+```
+
+#### Step 6: Using the App
+
+**Quick Tutorial:**
+1. Choose option **1** to add a todo
+2. Choose option **2** to see your todos
+3. Choose option **7** to set priorities
+4. Choose option **8** to add tags
+5. Choose option **11** to set recurring tasks
+
+**Example Session:**
+```bash
+Enter choice [1-12]: 1
+Enter title: Take vitamins
+Enter description: Daily health routine
+✅ Todo added successfully! (ID: 1)
+
+Enter choice [1-12]: 11
+Enter todo ID: 1
+Enter pattern: Daily
+✅ Todo ID 1 recurrence set to Daily!
+
+Enter choice [1-12]: 2
+📋 YOUR TODO LIST:
+ID | Pri | Rec | Status | Title         | Tags
+---|-----|-----|--------|---------------|------
+1  | 🟡M | 🔁D | ⬜ | Take vitamins |
+```
+
+---
+
+### Option 2: Clone from Git (Alternative)
+
+If you have Git installed:
+
+```bash
+# Clone the repository
+git clone https://github.com/Roofan-Jlove/Hackathon-II-TODO-APP.git
+cd Hackathon-II-TODO-APP
+
+# Checkout the release version
+git checkout v1.0.0
+
+# Install and run
+uv sync
+uv run python src/main.py
+```
+
+---
+
+### Platform-Specific Notes
+
+#### Windows Users
+
+**Enable UTF-8 Support for Emojis:**
+```powershell
+# Before running the app
+chcp 65001
+
+# Then run
+uv run python src/main.py
+```
+
+**Or set permanently in PowerShell profile:**
+```powershell
+# Add to profile
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+```
+
+#### macOS/Linux Users
+
+**Ensure UTF-8 Encoding:**
+```bash
+# Add to ~/.bashrc or ~/.zshrc
+export LANG=en_US.UTF-8
+
+# Then source
+source ~/.bashrc  # or ~/.zshrc
+```
+
+---
+
+### System Requirements
+
+**Minimum:**
+- **OS**: Windows 10+, macOS 10.15+, Linux (any modern distro)
+- **Python**: 3.13 or higher
+- **RAM**: 256 MB
+- **Storage**: 50 MB
+
+**Recommended:**
+- **OS**: Windows 11, macOS 14+, Ubuntu 22.04+
+- **Python**: 3.13 (latest)
+- **RAM**: 512 MB
+- **Storage**: 100 MB
+- **Terminal**: Modern terminal with emoji support
+
+---
+
+### Quick Troubleshooting
+
+**Problem: "python not found"**
+```bash
+# Windows: Add Python to PATH during installation
+# macOS/Linux: Install via package manager (brew, apt, dnf)
+```
+
+**Problem: "uv not found"**
+```bash
+# Reinstall UV and ensure it's in PATH
+# Windows: Check %USERPROFILE%\.cargo\bin
+# macOS/Linux: Check ~/.cargo/bin
+```
+
+**Problem: Emojis not showing**
+```bash
+# Windows: Run "chcp 65001" before starting app
+# macOS/Linux: Set "export LANG=en_US.UTF-8"
+```
+
+**Problem: "ModuleNotFoundError"**
+```bash
+# Run: uv sync
+# This reinstalls all dependencies
+```
+
+---
+
+### Uninstallation
+
+To remove the app:
+
+```bash
+# 1. Delete the application folder
+# Windows: Right-click folder → Delete
+# macOS/Linux: rm -rf Hackathon-II-TODO-APP-1.0.0
+
+# 2. (Optional) Uninstall UV
+# Windows: Remove from Programs & Features
+# macOS/Linux: rm -rf ~/.cargo/bin/uv
+
+# 3. (Optional) Remove Python 3.13
+# Only if you don't need it for other projects
+```
+
+---
+
+### Getting Help
+
+- **User Guide**: See [README.md](./README.md) for detailed feature documentation
+- **Issues**: Report bugs at https://github.com/Roofan-Jlove/Hackathon-II-TODO-APP/issues
+- **Questions**: Ask at https://github.com/Roofan-Jlove/Hackathon-II-TODO-APP/discussions
+
+---
+
+## 🚀 For Developers - Installation & Setup
 
 ### Prerequisites Installation
 
