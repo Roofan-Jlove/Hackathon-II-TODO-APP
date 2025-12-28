@@ -1,210 +1,331 @@
-# Claude Code Rules
+# Claude Code Instructions - CLI Todo Manager
 
-This file is generated during init for the selected agent.
+This document provides Claude Code with project-specific instructions for working with the CLI Todo Manager application.
 
-You are an expert AI assistant specializing in Spec-Driven Development (SDD). Your primary goal is to work with the architext to build products.
+## Project Overview
 
-## Task context
+**Name:** CLI Todo Manager
+**Type:** Console Application (Python 3.13+)
+**Architecture:** Functional Programming (no classes)
+**Package Manager:** UV (mandatory)
+**Status:** Feature-complete with 100% test coverage (93/93 tests passing)
 
-**Your Surface:** You operate on a project level, providing guidance to users and executing development tasks via a defined set of tools.
+**Purpose:** A command-line todo list manager that allows users to create, view, update, delete, and manage completion status of tasks.
 
-**Your Success is Measured By:**
-- All outputs strictly follow the user intent.
-- Prompt History Records (PHRs) are created automatically and accurately for every user prompt.
-- Architectural Decision Record (ADR) suggestions are made intelligently for significant decisions.
-- All changes are small, testable, and reference code precisely.
+## Quick Start
 
-## Core Guarantees (Product Promise)
+### Setup
+```bash
+# Clone repository
+git clone https://github.com/Roofan-Jlove/Hackathon-II-TODO-APP.git
+cd Hackathon-II-TODO-APP
+git checkout console-app
 
-- Record every user input verbatim in a Prompt History Record (PHR) after every user message. Do not truncate; preserve full multiline input.
-- PHR routing (all under `history/prompts/`):
-  - Constitution → `history/prompts/constitution/`
-  - Feature-specific → `history/prompts/<feature-name>/`
-  - General → `history/prompts/general/`
-- ADR suggestions: when an architecturally significant decision is detected, suggest: "📋 Architectural decision detected: <brief>. Document? Run `/sp.adr <title>`." Never auto‑create ADRs; require user consent.
+# Install UV (if not already installed)
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
-## Development Guidelines
+# Install dependencies
+uv sync
+```
 
-### 1. Authoritative Source Mandate:
-Agents MUST prioritize and use MCP tools and CLI commands for all information gathering and task execution. NEVER assume a solution from internal knowledge; all methods require external verification.
+### Run Application
+```bash
+uv run python src/main.py
+```
 
-### 2. Execution Flow:
-Treat MCP servers as first-class tools for discovery, verification, execution, and state capture. PREFER CLI interactions (running commands and capturing outputs) over manual file creation or reliance on internal knowledge.
+### Run Tests
+```bash
+# All tests
+uv run python -m unittest discover -s tests -p "test_*.py" -v
 
-### 3. Knowledge capture (PHR) for Every User Input.
-After completing requests, you **MUST** create a PHR (Prompt History Record).
+# Unit tests only
+uv run python -m unittest discover -s tests/unit -p "test_*.py" -v
 
-**When to create PHRs:**
-- Implementation work (code changes, new features)
-- Planning/architecture discussions
-- Debugging sessions
-- Spec/task/plan creation
-- Multi-step workflows
+# Integration tests only
+uv run python -m unittest discover -s tests/integration -p "test_*.py" -v
 
-**PHR Creation Process:**
+# Contract tests only
+uv run python -m unittest discover -s tests/contract -p "test_*.py" -v
+```
 
-1) Detect stage
-   - One of: constitution | spec | plan | tasks | red | green | refactor | explainer | misc | general
+## Project Structure
 
-2) Generate title
-   - 3–7 words; create a slug for the filename.
+```
+├── src/
+│   ├── main.py         # Application entry point, main menu loop
+│   ├── cli.py          # User interaction, prompts, display formatting
+│   ├── storage.py      # CRUD operations, in-memory storage
+│   └── models.py       # Data validation, todo creation
+├── tests/
+│   ├── unit/           # 42 unit tests for individual functions
+│   ├── integration/    # 12 integration tests for user stories
+│   └── contract/       # 39 contract tests for CLI compliance
+├── specs/001-cli-todo-app/
+│   ├── spec.md         # Feature specification with user stories
+│   ├── plan.md         # Implementation plan and architecture
+│   ├── tasks.md        # Task breakdown by phase
+│   ├── contracts/      # CLI interface contracts
+│   ├── data-model.md   # Data structure documentation
+│   ├── research.md     # Research and decisions
+│   └── quickstart.md   # Quick testing scenarios
+├── .specify/memory/
+│   └── constitution.md # Project principles and coding standards
+├── history/prompts/    # Prompt history records (PHRs)
+├── pyproject.toml      # UV project configuration
+├── README.md           # User-facing documentation
+└── CLAUDE.md           # This file
+```
 
-2a) Resolve route (all under history/prompts/)
-  - `constitution` → `history/prompts/constitution/`
-  - Feature stages (spec, plan, tasks, red, green, refactor, explainer, misc) → `history/prompts/<feature-name>/` (requires feature context)
-  - `general` → `history/prompts/general/`
+## Implemented Features
 
-3) Prefer agent‑native flow (no shell)
-   - Read the PHR template from one of:
-     - `.specify/templates/phr-template.prompt.md`
-     - `templates/phr-template.prompt.md`
-   - Allocate an ID (increment; on collision, increment again).
-   - Compute output path based on stage:
-     - Constitution → `history/prompts/constitution/<ID>-<slug>.constitution.prompt.md`
-     - Feature → `history/prompts/<feature-name>/<ID>-<slug>.<stage>.prompt.md`
-     - General → `history/prompts/general/<ID>-<slug>.general.prompt.md`
-   - Fill ALL placeholders in YAML and body:
-     - ID, TITLE, STAGE, DATE_ISO (YYYY‑MM‑DD), SURFACE="agent"
-     - MODEL (best known), FEATURE (or "none"), BRANCH, USER
-     - COMMAND (current command), LABELS (["topic1","topic2",...])
-     - LINKS: SPEC/TICKET/ADR/PR (URLs or "null")
-     - FILES_YAML: list created/modified files (one per line, " - ")
-     - TESTS_YAML: list tests run/added (one per line, " - ")
-     - PROMPT_TEXT: full user input (verbatim, not truncated)
-     - RESPONSE_TEXT: key assistant output (concise but representative)
-     - Any OUTCOME/EVALUATION fields required by the template
-   - Write the completed file with agent file tools (WriteFile/Edit).
-   - Confirm absolute path in output.
+### User Story 1: Create and View Todos
+- Add todo with title (required, 1-200 chars)
+- Add optional description (0-1000 chars)
+- List all todos with ID, status, title, description
+- Status indicators: `[ ]` incomplete, `[X]` complete
 
-4) Use sp.phr command file if present
-   - If `.**/commands/sp.phr.*` exists, follow its structure.
-   - If it references shell but Shell is unavailable, still perform step 3 with agent‑native tools.
+### User Story 2: Mark Completion Status
+- Mark todo as complete by ID
+- Mark todo as incomplete by ID
+- Idempotent operations (no error if already in that state)
 
-5) Shell fallback (only if step 3 is unavailable or fails, and Shell is permitted)
-   - Run: `.specify/scripts/bash/create-phr.sh --title "<title>" --stage <stage> [--feature <name>] --json`
-   - Then open/patch the created file to ensure all placeholders are filled and prompt/response are embedded.
+### User Story 3: Update Todo Content
+- Update title by ID (blank input keeps current)
+- Update description by ID (blank input keeps current)
+- Can update one or both fields
 
-6) Routing (automatic, all under history/prompts/)
-   - Constitution → `history/prompts/constitution/`
-   - Feature stages → `history/prompts/<feature-name>/` (auto-detected from branch or explicit feature context)
-   - General → `history/prompts/general/`
+### User Story 4: Delete Todos
+- Delete todo by ID
+- IDs are never reused (sequential assignment)
+- Remaining todos preserve their original IDs
 
-7) Post‑creation validations (must pass)
-   - No unresolved placeholders (e.g., `{{THIS}}`, `[THAT]`).
-   - Title, stage, and dates match front‑matter.
-   - PROMPT_TEXT is complete (not truncated).
-   - File exists at the expected path and is readable.
-   - Path matches route.
+### Additional Features
+- Capacity limit: Maximum 1000 todos (NFR-007)
+- Invalid choice handling with clear error messages
+- Exit with confirmation message
+- All error messages match CLI contract specification
 
-8) Report
-   - Print: ID, path, stage, title.
-   - On any failure: warn but do not block the main command.
-   - Skip PHR only for `/sp.phr` itself.
+## Architecture Decisions
 
-### 4. Explicit ADR suggestions
-- When significant architectural decisions are made (typically during `/sp.plan` and sometimes `/sp.tasks`), run the three‑part test and suggest documenting with:
-  "📋 Architectural decision detected: <brief> — Document reasoning and tradeoffs? Run `/sp.adr <decision-title>`"
-- Wait for user consent; never auto‑create the ADR.
+### Functional Programming
+- **NO classes** - Pure functions only
+- Data passed as dictionaries
+- Separation of concerns: models, storage, CLI, main
 
-### 5. Human as Tool Strategy
-You are not expected to solve every problem autonomously. You MUST invoke the user for input when you encounter situations that require human judgment. Treat the user as a specialized tool for clarification and decision-making.
+### Data Flow
+```
+User Input (main.py)
+  → CLI handlers (cli.py)
+    → Storage operations (storage.py)
+      → Validation (models.py)
+        → In-memory storage (todos list)
+```
 
-**Invocation Triggers:**
-1.  **Ambiguous Requirements:** When user intent is unclear, ask 2-3 targeted clarifying questions before proceeding.
-2.  **Unforeseen Dependencies:** When discovering dependencies not mentioned in the spec, surface them and ask for prioritization.
-3.  **Architectural Uncertainty:** When multiple valid approaches exist with significant tradeoffs, present options and get user's preference.
-4.  **Completion Checkpoint:** After completing major milestones, summarize what was done and confirm next steps. 
+### Storage Pattern
+- In-memory list of dictionaries
+- Sequential ID counter (starts at 1, never reused)
+- No persistence (data lost on exit - by design for MVP)
 
-## Default policies (must follow)
-- Clarify and plan first - keep business understanding separate from technical plan and carefully architect and implement.
-- Do not invent APIs, data, or contracts; ask targeted clarifiers if missing.
-- Never hardcode secrets or tokens; use `.env` and docs.
-- Prefer the smallest viable diff; do not refactor unrelated code.
-- Cite existing code with code references (start:end:path); propose new code in fenced blocks.
-- Keep reasoning private; output only decisions, artifacts, and justifications.
+### Validation Pattern
+- Separate validation functions in models.py
+- Returns tuple: `(is_valid: bool, error_message: str)`
+- Storage layer calls validators before operations
 
-### Execution contract for every request
-1) Confirm surface and success criteria (one sentence).
-2) List constraints, invariants, non‑goals.
-3) Produce the artifact with acceptance checks inlined (checkboxes or tests where applicable).
-4) Add follow‑ups and risks (max 3 bullets).
-5) Create PHR in appropriate subdirectory under `history/prompts/` (constitution, feature-name, or general).
-6) If plan/tasks identified decisions that meet significance, surface ADR suggestion text as described above.
+### Return Patterns
+- Storage operations return tuples:
+  - `add_todo()`: `(success, todo_id, message)`
+  - Other operations: `(success, message)`
+- Consistent error message format across all operations
 
-### Minimum acceptance criteria
-- Clear, testable acceptance criteria included
-- Explicit error paths and constraints stated
-- Smallest viable change; no unrelated edits
-- Code references to modified/inspected files where relevant
+## Coding Conventions
 
-## Architect Guidelines (for planning)
+### Function Signatures
+```python
+# Validation functions
+def validate_title(title: str) -> tuple[bool, str]:
+    """Returns (is_valid, error_message)"""
 
-Instructions: As an expert architect, generate a detailed architectural plan for [Project Name]. Address each of the following thoroughly.
+# Storage operations
+def add_todo(title: str, description: str | None) -> tuple[bool, int | None, str]:
+    """Returns (success, todo_id, message)"""
 
-1. Scope and Dependencies:
-   - In Scope: boundaries and key features.
-   - Out of Scope: explicitly excluded items.
-   - External Dependencies: systems/services/teams and ownership.
+def update_todo(todo_id: any, new_title: str | None, new_description: str | None) -> tuple[bool, str]:
+    """Returns (success, message)"""
+```
 
-2. Key Decisions and Rationale:
-   - Options Considered, Trade-offs, Rationale.
-   - Principles: measurable, reversible where possible, smallest viable change.
+### Error Messages (Exact Format Required)
+```python
+# From CLI contract - must match exactly
+"Error: Title cannot be empty."
+"Error: Title exceeds 200 character limit."
+"Error: Description exceeds 1000 character limit."
+"Error: Maximum 1000 todos reached."
+"Error: ID must be a positive integer."
+"Error: Todo with ID {id} not found."
+```
 
-3. Interfaces and API Contracts:
-   - Public APIs: Inputs, Outputs, Errors.
-   - Versioning Strategy.
-   - Idempotency, Timeouts, Retries.
-   - Error Taxonomy with status codes.
+### Success Messages (Exact Format Required)
+```python
+"Todo added successfully! (ID: {id})"
+"Todo ID {id} updated successfully!"
+"Todo ID {id} deleted successfully!"
+"Todo ID {id} marked as complete!"
+"Todo ID {id} marked as incomplete!"
+```
 
-4. Non-Functional Requirements (NFRs) and Budgets:
-   - Performance: p95 latency, throughput, resource caps.
-   - Reliability: SLOs, error budgets, degradation strategy.
-   - Security: AuthN/AuthZ, data handling, secrets, auditing.
-   - Cost: unit economics.
+### CLI Prompts (Exact Format Required)
+```python
+"Enter title: "
+"Enter description (optional, press Enter to skip): "
+"Enter todo ID: "
+"Enter todo ID to delete: "
+"Enter new title (leave blank to keep current): "
+"Enter new description (leave blank to keep current): "
+```
 
-5. Data Management and Migration:
-   - Source of Truth, Schema Evolution, Migration and Rollback, Data Retention.
+## Development Workflow
 
-6. Operational Readiness:
-   - Observability: logs, metrics, traces.
-   - Alerting: thresholds and on-call owners.
-   - Runbooks for common tasks.
-   - Deployment and Rollback strategies.
-   - Feature Flags and compatibility.
+### Making Changes
+1. **Read specification** in `specs/001-cli-todo-app/spec.md`
+2. **Follow TDD approach**:
+   - Write test first (red)
+   - Implement minimal code to pass (green)
+   - Refactor if needed
+3. **Run all tests** to ensure no regressions
+4. **Update documentation** if behavior changes
 
-7. Risk Analysis and Mitigation:
-   - Top 3 Risks, blast radius, kill switches/guardrails.
+### Adding New Features
+1. Update `spec.md` with new user story
+2. Update `plan.md` with implementation approach
+3. Add tasks to `tasks.md`
+4. Write tests (unit, integration, contract)
+5. Implement feature
+6. Verify all 93 tests still pass
 
-8. Evaluation and Validation:
-   - Definition of Done (tests, scans).
-   - Output Validation for format/requirements/safety.
+### Test-Driven Development
+```bash
+# 1. Write test first
+# tests/unit/test_storage.py - add new test
 
-9. Architectural Decision Record (ADR):
-   - For each significant decision, create an ADR and link it.
+# 2. Run test (should FAIL)
+uv run python -m unittest tests.unit.test_storage.TestNewFeature -v
 
-### Architecture Decision Records (ADR) - Intelligent Suggestion
+# 3. Implement feature
+# src/storage.py - add minimal code
 
-After design/architecture work, test for ADR significance:
+# 4. Run test (should PASS)
+uv run python -m unittest tests.unit.test_storage.TestNewFeature -v
 
-- Impact: long-term consequences? (e.g., framework, data model, API, security, platform)
-- Alternatives: multiple viable options considered?
-- Scope: cross‑cutting and influences system design?
+# 5. Run all tests (should all PASS)
+uv run python -m unittest discover -s tests -p "test_*.py" -v
+```
 
-If ALL true, suggest:
-📋 Architectural decision detected: [brief-description]
-   Document reasoning and tradeoffs? Run `/sp.adr [decision-title]`
+## Key Constraints
 
-Wait for consent; never auto-create ADRs. Group related decisions (stacks, authentication, deployment) into one ADR when appropriate.
+### MUST Follow
+- ✅ Use UV for all package management (no pip, pipenv, poetry)
+- ✅ Python 3.13+ only
+- ✅ Functional programming (no classes)
+- ✅ Exact CLI contract compliance (prompts, messages, formats)
+- ✅ All tests must pass (93/93 - 100%)
+- ✅ In-memory storage only (no database, no files)
 
-## Basic Project Structure
+### MUST NOT Do
+- ❌ Create classes or OOP patterns
+- ❌ Add persistence (files, databases)
+- ❌ Change error message formats
+- ❌ Change CLI prompt formats
+- ❌ Use global mutable state (except todos list and next_id in storage.py)
 
-- `.specify/memory/constitution.md` — Project principles
-- `specs/<feature>/spec.md` — Feature requirements
-- `specs/<feature>/plan.md` — Architecture decisions
-- `specs/<feature>/tasks.md` — Testable tasks with cases
-- `history/prompts/` — Prompt History Records
-- `history/adr/` — Architecture Decision Records
-- `.specify/` — SpecKit Plus templates and scripts
+## Testing Strategy
 
-## Code Standards
-See `.specify/memory/constitution.md` for code quality, testing, performance, security, and architecture principles.
+### Test Coverage (93 tests total)
+
+**Unit Tests (42 tests):**
+- `test_models.py`: 13 tests for validation functions
+- `test_cli.py`: 4 tests for display functions
+- `test_storage.py`: 25 tests for CRUD operations
+
+**Integration Tests (12 tests):**
+- `test_workflows.py`: 3 tests per user story (4 stories)
+- End-to-end scenarios from spec.md
+
+**Contract Tests (39 tests):**
+- `test_cli_interface.py`: Exact prompt and message verification
+- Menu, Add, List, Update, Delete, Mark Complete/Incomplete
+
+### Running Specific Tests
+```bash
+# Single test file
+uv run python -m unittest tests.unit.test_storage -v
+
+# Single test class
+uv run python -m unittest tests.unit.test_storage.TestAddTodo -v
+
+# Single test method
+uv run python -m unittest tests.unit.test_storage.TestAddTodo.test_add_todo_with_valid_inputs -v
+```
+
+## Common Tasks
+
+### Add a New Storage Operation
+```python
+# 1. Write test in tests/unit/test_storage.py
+def test_new_operation(self):
+    from storage import new_operation
+    success, message = new_operation(...)
+    self.assertTrue(success)
+    self.assertEqual(message, "Expected message")
+
+# 2. Implement in src/storage.py
+def new_operation(...) -> tuple[bool, str]:
+    """Docstring with contract details."""
+    # Validate inputs
+    # Perform operation
+    # Return (success, message)
+    pass
+
+# 3. Add CLI handler in src/cli.py if needed
+def handle_new_operation() -> None:
+    """Handle new operation with user prompts."""
+    pass
+
+# 4. Wire up in src/main.py if new menu item
+```
+
+### Fix a Failing Test
+```bash
+# 1. Run the specific failing test
+uv run python -m unittest tests.unit.test_storage.TestSomething.test_failing -v
+
+# 2. Read the error message
+# 3. Check the test expectations
+# 4. Fix the implementation
+# 5. Re-run the specific test
+# 6. Run all tests to ensure no regressions
+```
+
+## References
+
+- **Specification**: `specs/001-cli-todo-app/spec.md`
+- **Architecture Plan**: `specs/001-cli-todo-app/plan.md`
+- **Task Breakdown**: `specs/001-cli-todo-app/tasks.md`
+- **CLI Contracts**: `specs/001-cli-todo-app/contracts/cli-interface.md`
+- **Constitution**: `.specify/memory/constitution.md`
+
+## Success Criteria
+
+When working on this project, ensure:
+- ✅ All 93 tests pass
+- ✅ CLI contract compliance maintained
+- ✅ Functional programming patterns followed
+- ✅ Error messages match specification exactly
+- ✅ Code is well-documented with docstrings
+- ✅ No classes introduced
+- ✅ UV used for all Python operations
+
+---
+
+**Last Updated:** 2025-12-29
+**Project Status:** Feature-complete, production-ready
+**Test Coverage:** 100% (93/93 tests passing)
