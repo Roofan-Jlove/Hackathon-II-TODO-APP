@@ -147,6 +147,90 @@ class TestValidateId(unittest.TestCase):
         self.assertEqual(error, "Error: ID must be a positive integer.")
 
 
+class TestValidatePriority(unittest.TestCase):
+    """Test cases for validate_priority function (Phase II - User Story 5)."""
+
+    def test_valid_priority_high(self):
+        """'High' should be accepted and normalized."""
+        from models import validate_priority
+
+        valid, normalized, error = validate_priority("High")
+
+        self.assertTrue(valid)
+        self.assertEqual(normalized, "High")
+        self.assertEqual(error, "")
+
+    def test_valid_priority_medium(self):
+        """'Medium' should be accepted and normalized."""
+        from models import validate_priority
+
+        valid, normalized, error = validate_priority("Medium")
+
+        self.assertTrue(valid)
+        self.assertEqual(normalized, "Medium")
+        self.assertEqual(error, "")
+
+    def test_valid_priority_low(self):
+        """'Low' should be accepted and normalized."""
+        from models import validate_priority
+
+        valid, normalized, error = validate_priority("Low")
+
+        self.assertTrue(valid)
+        self.assertEqual(normalized, "Low")
+        self.assertEqual(error, "")
+
+    def test_case_insensitive_high(self):
+        """'high', 'HIGH', 'HiGh' should all be normalized to 'High'."""
+        from models import validate_priority
+
+        for variant in ["high", "HIGH", "HiGh", "hIgH"]:
+            valid, normalized, error = validate_priority(variant)
+            self.assertTrue(valid, f"'{variant}' should be valid")
+            self.assertEqual(normalized, "High", f"'{variant}' should normalize to 'High'")
+            self.assertEqual(error, "")
+
+    def test_case_insensitive_medium(self):
+        """'medium', 'MEDIUM', 'MeDiUm' should all be normalized to 'Medium'."""
+        from models import validate_priority
+
+        for variant in ["medium", "MEDIUM", "MeDiUm"]:
+            valid, normalized, error = validate_priority(variant)
+            self.assertTrue(valid)
+            self.assertEqual(normalized, "Medium")
+            self.assertEqual(error, "")
+
+    def test_case_insensitive_low(self):
+        """'low', 'LOW', 'LoW' should all be normalized to 'Low'."""
+        from models import validate_priority
+
+        for variant in ["low", "LOW", "LoW"]:
+            valid, normalized, error = validate_priority(variant)
+            self.assertTrue(valid)
+            self.assertEqual(normalized, "Low")
+            self.assertEqual(error, "")
+
+    def test_invalid_priority_returns_error(self):
+        """Invalid priority values should return error."""
+        from models import validate_priority
+
+        for invalid in ["urgent", "critical", "normal", "", "123", None]:
+            valid, normalized, error = validate_priority(invalid)
+            self.assertFalse(valid, f"'{invalid}' should be invalid")
+            self.assertIsNone(normalized, f"'{invalid}' should return None")
+            self.assertEqual(error, "Error: Priority must be High, Medium, or Low.")
+
+    def test_whitespace_priority_normalized(self):
+        """Priority with leading/trailing whitespace should be normalized."""
+        from models import validate_priority
+
+        valid, normalized, error = validate_priority("  High  ")
+
+        self.assertTrue(valid)
+        self.assertEqual(normalized, "High")
+        self.assertEqual(error, "")
+
+
 class TestMigrateTodoToPhase2(unittest.TestCase):
     """Test cases for migrate_todo_to_phase2 function (data migration)."""
 

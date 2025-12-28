@@ -424,3 +424,64 @@ def delete_todo(todo_id: any) -> tuple[bool, str]:
 
     # Return success
     return (True, f"Todo ID {parsed_id} deleted successfully!")
+
+
+def update_priority(todo_id: any, new_priority: str) -> tuple[bool, str]:
+    """
+    Update priority of an existing todo (Phase II - User Story 5).
+
+    Args:
+        todo_id: ID of todo to update (any type, will be validated)
+        new_priority: New priority value ("High", "Medium", "Low")
+
+    Returns:
+        tuple: (success, message)
+            - success (bool): True if priority was updated
+            - message (str): Success message or error message
+
+    Behavior:
+        - Validates todo ID
+        - Validates new priority value
+        - Updates priority field in todo
+        - Case-insensitive priority input (normalized to proper case)
+
+    Error Messages:
+        - Invalid ID: "Error: ID must be a positive integer."
+        - Not found: "Error: Todo with ID {id} not found."
+        - Invalid priority: "Error: Priority must be High, Medium, or Low."
+
+    Success Message:
+        - "Todo ID {id} priority updated to {priority}!"
+
+    Examples:
+        >>> add_todo("Buy groceries", "Milk")
+        (True, 1, "Todo added successfully! (ID: 1)")
+        >>> update_priority(1, "High")
+        (True, "Todo ID 1 priority updated to High!")
+        >>> update_priority(1, "urgent")
+        (False, "Error: Priority must be High, Medium, or Low.")
+        >>> update_priority(999, "High")
+        (False, "Error: Todo with ID 999 not found.")
+    """
+    from models import validate_id, validate_priority
+
+    # Validate ID
+    valid, parsed_id, error = validate_id(todo_id)
+    if not valid:
+        return (False, error)
+
+    # Get todo
+    todo = get_todo_by_id(parsed_id)
+    if todo is None:
+        return (False, f"Error: Todo with ID {parsed_id} not found.")
+
+    # Validate priority
+    priority_valid, normalized_priority, priority_error = validate_priority(new_priority)
+    if not priority_valid:
+        return (False, priority_error)
+
+    # Update priority
+    todo["priority"] = normalized_priority
+
+    # Return success
+    return (True, f"Todo ID {parsed_id} priority updated to {normalized_priority}!")

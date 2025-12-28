@@ -61,23 +61,24 @@ def display_menu() -> None:
     print(Fore.RED + "  🗑️   4. " + Style.RESET_ALL + "Delete Todo")
     print(Fore.GREEN + "  ✅  5. " + Style.RESET_ALL + "Mark Todo Complete")
     print(Fore.WHITE + "  ⬜  6. " + Style.RESET_ALL + "Mark Todo Incomplete")
-    print(Fore.CYAN + "  👋  7. " + Style.RESET_ALL + "Exit")
+    print(Fore.MAGENTA + "  🎯  7. " + Style.RESET_ALL + "Set Priority")
+    print(Fore.CYAN + "  👋  8. " + Style.RESET_ALL + "Exit")
     print()
 
 
 def get_menu_choice() -> str:
     """
-    Get user's menu choice.
+    Get user's menu choice (Phase II enhanced - now includes Set Priority).
 
-    Prompts the user with "Enter choice [1-7]: " and returns their input.
+    Prompts the user with "Enter choice [1-8]: " and returns their input.
 
     Returns:
         str: User's menu choice (not validated - validation happens in main loop)
 
-    Contract: Exact prompt format per CLI contract
-    (specs/001-cli-todo-app/contracts/cli-interface.md line 24)
+    Phase II Enhancement:
+        - Updated prompt from [1-7] to [1-8] to include Set Priority option
     """
-    return input("Enter choice [1-7]: ")
+    return input("Enter choice [1-8]: ")
 
 
 def display_todos(todos: list[dict]) -> None:
@@ -116,13 +117,22 @@ def display_todos(todos: list[dict]) -> None:
     print(Fore.CYAN + Style.BRIGHT + "📋 YOUR TODO LIST:")
     print()
 
-    # Table header
-    print(Fore.MAGENTA + Style.BRIGHT + "ID | Status | Title           | Description")
-    print(Fore.MAGENTA + "---|--------|-----------------|------------------" + Style.RESET_ALL)
+    # Table header (Phase II enhanced with Priority column)
+    print(Fore.MAGENTA + Style.BRIGHT + "ID | Priority | Status | Title           | Description")
+    print(Fore.MAGENTA + "---|----------|--------|-----------------|------------------" + Style.RESET_ALL)
 
     # Data rows
     for todo in todos:
         todo_id = todo["id"]
+
+        # Priority indicator with color (Phase II)
+        priority = todo.get("priority", "Medium")  # Default to Medium if missing
+        if priority == "High":
+            priority_display = Fore.RED + "🔴 H" + Style.RESET_ALL
+        elif priority == "Low":
+            priority_display = Fore.BLUE + "🔵 L" + Style.RESET_ALL
+        else:  # Medium
+            priority_display = Fore.YELLOW + "🟡 M" + Style.RESET_ALL
 
         # Use emoji for status
         if todo["completed"]:
@@ -133,12 +143,12 @@ def display_todos(todos: list[dict]) -> None:
         title = todo["title"]
         description = todo["description"]
 
-        # Format: ID | Status | Title | Description
+        # Format: ID | Priority | Status | Title | Description
         # Color completed todos differently
         if todo["completed"]:
-            print(f"{Fore.GREEN}{todo_id:<2}{Style.RESET_ALL} | {status:<6} | {Fore.GREEN}{title:<15}{Style.RESET_ALL} | {Fore.GREEN}{description}{Style.RESET_ALL}")
+            print(f"{Fore.GREEN}{todo_id:<2}{Style.RESET_ALL} | {priority_display:<10} | {status:<6} | {Fore.GREEN}{title:<15}{Style.RESET_ALL} | {Fore.GREEN}{description}{Style.RESET_ALL}")
         else:
-            print(f"{Fore.CYAN}{todo_id:<2}{Style.RESET_ALL} | {status:<6} | {title:<15} | {description}")
+            print(f"{Fore.CYAN}{todo_id:<2}{Style.RESET_ALL} | {priority_display:<10} | {status:<6} | {title:<15} | {description}")
 
     print()  # Empty line after list
 
@@ -328,3 +338,41 @@ def handle_delete() -> None:
 
     # Display result
     print(message)
+
+
+def handle_set_priority() -> None:
+    """
+    Handle Set Priority operation (Phase II - User Story 5).
+
+    Input Prompts:
+        1. "Enter todo ID: "
+        2. "Enter priority (High/Medium/Low): "
+
+    Output:
+        - Success: "Todo ID N priority updated to {priority}!"
+        - Error: Various validation errors from storage layer
+
+    Flow:
+        1. Prompt for todo ID
+        2. Prompt for new priority
+        3. Call storage.update_priority()
+        4. Display result message
+    """
+    from storage import update_priority
+
+    # Prompt for ID
+    todo_id = input(Fore.CYAN + "Enter todo ID: " + Style.RESET_ALL)
+
+    # Prompt for priority
+    print(Fore.YELLOW + "Priority options: " + Fore.RED + "High" + Fore.YELLOW + " / " +
+          Fore.YELLOW + "Medium" + Fore.YELLOW + " / " + Fore.BLUE + "Low" + Style.RESET_ALL)
+    new_priority = input(Fore.CYAN + "Enter priority: " + Style.RESET_ALL)
+
+    # Call storage layer
+    success, message = update_priority(todo_id, new_priority)
+
+    # Display result with color
+    if success:
+        print(Fore.GREEN + "✅ " + message + Style.RESET_ALL)
+    else:
+        print(Fore.RED + "❌ " + message + Style.RESET_ALL)

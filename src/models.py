@@ -142,6 +142,54 @@ def validate_description(description: str | None) -> tuple[bool, str]:
     return (True, "")
 
 
+def validate_priority(priority: str | None) -> tuple[bool, str | None, str]:
+    """
+    Validate and normalize priority value (Phase II - User Story 5).
+
+    Args:
+        priority: Priority string to validate ("High", "Medium", "Low")
+                 Case-insensitive, will be normalized
+
+    Returns:
+        tuple: (valid, normalized_priority, error_message)
+            - valid (bool): True if validation passed
+            - normalized_priority (str | None): Normalized priority if valid, None otherwise
+            - error_message (str): Error message if invalid, empty string if valid
+
+    Validation Rules:
+        - Must be one of: "High", "Medium", "Low" (case-insensitive)
+        - Leading/trailing whitespace is trimmed
+        - Normalized to proper case: "High", "Medium", "Low"
+
+    Error Messages:
+        - Invalid priority: "Error: Priority must be High, Medium, or Low."
+
+    Examples:
+        >>> validate_priority("high")
+        (True, "High", "")
+        >>> validate_priority("MEDIUM")
+        (True, "Medium", "")
+        >>> validate_priority("urgent")
+        (False, None, "Error: Priority must be High, Medium, or Low.")
+    """
+    # Valid priority values (normalized)
+    VALID_PRIORITIES = {"high": "High", "medium": "Medium", "low": "Low"}
+
+    # Check for None or empty
+    if priority is None or (isinstance(priority, str) and priority.strip() == ""):
+        return (False, None, "Error: Priority must be High, Medium, or Low.")
+
+    # Convert to string and normalize (strip whitespace, lowercase for comparison)
+    priority_str = str(priority).strip().lower()
+
+    # Check if valid
+    if priority_str in VALID_PRIORITIES:
+        normalized = VALID_PRIORITIES[priority_str]
+        return (True, normalized, "")
+    else:
+        return (False, None, "Error: Priority must be High, Medium, or Low.")
+
+
 def migrate_todo_to_phase2(todo: dict) -> dict:
     """
     Migrate a Phase I todo to Phase II by adding priority, tags, and created_at fields.
