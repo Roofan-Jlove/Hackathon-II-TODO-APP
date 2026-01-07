@@ -1,565 +1,533 @@
-# 📋 CLI Todo Manager - Hackathon Phase 1
+# Todo Manager - Phase II Web Application
 
-> A feature-rich, colorful command-line todo list manager built with Python 3.13+, featuring priorities, tags, search/filter, sorting, and recurring tasks.
+> A modern, full-stack todo management web application with authentication, persistence, and a beautiful user interface.
 
-[![Python Version](https://img.shields.io/badge/python-3.13%2B-blue)](https://www.python.org/)
-[![Package Manager](https://img.shields.io/badge/package%20manager-UV-purple)](https://docs.astral.sh/uv/)
-[![Test Coverage](https://img.shields.io/badge/test%20coverage-100%25-brightgreen)](./tests)
+[![Next.js](https://img.shields.io/badge/Next.js-16%2B-black)](https://nextjs.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-Python_3.13%2B-009688)](https://fastapi.tiangolo.com/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon_Serverless-316192)](https://neon.tech/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9%2B-blue)](https://www.typescriptlang.org/)
 [![License](https://img.shields.io/badge/license-Educational-orange)](./LICENSE)
 
 ---
 
-## 🎯 Overview
+## Overview
 
-**CLI Todo Manager** is a fully-featured command-line application for managing your daily tasks with style. Built as part of a hackathon project, it demonstrates rapid full-stack development using AI-assisted tools and spec-driven development methodology.
+**Todo Manager** is a production-ready, full-stack web application that allows users to create, organize, and manage their tasks with authentication, cloud persistence, and a modern UI. This is **Phase II** of our todo application evolution, transitioning from a CLI application (Phase I) to a complete web platform.
 
-### ✨ Key Highlights
+### Key Features
 
-- 🎨 **Colorful CLI** with emoji indicators for better visual experience
-- 🔄 **Recurring Tasks** with automatic next occurrence creation
-- 🏷️ **Tags & Priorities** for better task organization
-- 🔍 **Powerful Search** with filtering and sorting capabilities
-- ✅ **100% Test Coverage** with 56 passing unit tests
-- 🚀 **Production Ready** with clean functional architecture
-
----
-
-## 📸 Screenshot
-
-```
-╔════════════════════════════════════════════════════════════╗
-║          📋 TODO MANAGER - MAIN MENU                       ║
-╚════════════════════════════════════════════════════════════╝
-
-  ➕  1. Add Todo
-  📋  2. List All Todos
-  ✏️   3. Update Todo
-  🗑️   4. Delete Todo
-  ✅  5. Mark Todo Complete
-  ⬜  6. Mark Todo Incomplete
-  🎯  7. Set Priority
-  🏷️   8. Manage Tags
-  🔍  9. Search & Filter
-  🔀  10. Sort
-  🔁  11. Set Recurrence
-  👋  12. Exit
-
-Enter choice [1-12]: _
-```
-
-### Example Todo List
-
-```
-📋 YOUR TODO LIST:
-
-ID | Pri | Rec | Status | Title           | Tags
----|-----|-----|--------|-----------------|------------------
-1  | 🔴H | 🔁D | ⬜ | Take vitamins   | health, daily
-2  | 🟡M | 🔁W | ⬜ | Team meeting    | work, recurring
-3  | 🔴H |     | ⬜ | Project deadline| work, urgent
-4  | 🔵L | 🔁M | ⬜ | Pay rent        | finance, monthly
-5  | 🟡M |     | ✅ | Buy groceries   | shopping, personal
-```
+- **User Authentication** - Secure signup/login with Better Auth
+- **Task Management** - Full CRUD operations for todos
+- **Advanced Features** - Priorities, tags, recurring tasks, due dates
+- **Kanban Board** - Drag-and-drop task organization (Ready, In Progress, Review, Done)
+- **Search & Filter** - Real-time search, filter by priority/tags/status
+- **Sorting** - Sort by date, priority, title, or completion status
+- **Data Persistence** - Cloud database storage with Neon PostgreSQL
+- **Modern UI** - Responsive design with Tailwind CSS
+- **RESTful API** - FastAPI backend with automatic documentation
+- **Type Safety** - TypeScript frontend with strict mode
 
 ---
 
-## 🚀 Quick Start
+## Tech Stack
+
+### Frontend
+- **Framework:** Next.js 16+ (App Router)
+- **Language:** TypeScript (strict mode)
+- **Styling:** Tailwind CSS
+- **UI Components:** Lucide React icons, Hello Pangea DnD
+- **State Management:** React Query (TanStack Query)
+- **Authentication:** Better Auth
+
+### Backend
+- **Framework:** FastAPI (Python 3.13+)
+- **ORM:** SQLModel
+- **Database:** Neon Serverless PostgreSQL
+- **Authentication:** PyJWT (JWT token verification)
+- **Validation:** Pydantic models
+- **Migrations:** Alembic
+
+### Development Tools
+- **Package Managers:** npm (frontend), UV (backend)
+- **Spec Framework:** SpecKit Plus
+- **AI Assistant:** Claude Code
+- **Version Control:** Git
+
+---
+
+## Quick Start
 
 ### Prerequisites
 
-- **Python 3.13+** ([Download](https://www.python.org/downloads/))
-- **UV Package Manager** ([Installation Guide](https://docs.astral.sh/uv/))
+- **Node.js** 18.x or higher ([Download](https://nodejs.org/))
+- **Python** 3.13 or higher ([Download](https://www.python.org/))
+- **UV** Package Manager ([Installation](https://docs.astral.sh/uv/))
+- **PostgreSQL** Database (Neon Serverless recommended)
 
 ### Installation
 
-#### 1. Install UV (if not already installed)
-
-**Windows:**
-```powershell
-powershell -c "irm https://astral.sh/uv/install.ps1 | iex"
-```
-
-**macOS/Linux:**
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
-```
-
-**Verify Installation:**
-```bash
-uv --version
-```
-
-#### 2. Clone and Setup Project
+#### 1. Clone the Repository
 
 ```bash
-# Clone the repository
 git clone https://github.com/Roofan-Jlove/Hackathon-II-TODO-APP.git
-cd Hackathon-II-TODO-APP
+cd Hackathon-II-TODO-APP/phase-2-web-app
+```
 
-# Checkout the console-app branch
-git checkout console-app
+#### 2. Set Up Backend
 
-# Install dependencies (UV handles virtual environment automatically)
+```bash
+cd backend
+
+# Install dependencies
 uv sync
+
+# Configure environment
+cp .env.example .env
+# Edit .env with your database credentials and secrets
+
+# Run the backend server
+uv run uvicorn app.main:app --reload
 ```
 
-#### 3. Run the Application
+Backend will be running at: **http://localhost:8000**
+
+**API Documentation:**
+- Swagger UI: http://localhost:8000/docs
+- ReDoc: http://localhost:8000/redoc
+
+#### 3. Set Up Frontend
 
 ```bash
-uv run python src/main.py
+cd ../frontend
+
+# Install dependencies
+npm install
+
+# Configure environment
+cp .env.example .env.local
+# Edit .env.local with backend URL
+
+# Run the frontend server
+npm run dev
+```
+
+Frontend will be running at: **http://localhost:3000**
+
+---
+
+## Project Structure
+
+```
+phase-2-web-app/
+├── frontend/                     # Next.js Frontend Application
+│   ├── src/
+│   │   ├── app/                 # App Router (pages, layouts)
+│   │   ├── components/          # Reusable React components
+│   │   └── lib/                 # Utilities, API client, types
+│   ├── public/                  # Static assets
+│   ├── package.json
+│   └── README.md                # Frontend documentation
+│
+├── backend/                      # FastAPI Backend Application
+│   ├── app/
+│   │   ├── main.py             # FastAPI entry point
+│   │   ├── models.py           # SQLModel database models
+│   │   ├── routers/            # API route handlers
+│   │   ├── dependencies/       # FastAPI dependencies
+│   │   └── middleware/         # Middleware components
+│   ├── alembic/                # Database migrations
+│   ├── pyproject.toml
+│   └── README.md               # Backend documentation
+│
+├── specs/                       # Specifications (SpecKit Plus)
+│   ├── overview.md             # Project overview
+│   ├── architecture.md         # System architecture
+│   ├── features/               # Feature specifications
+│   ├── api/                    # API specifications
+│   ├── database/               # Database schemas
+│   └── ui/                     # UI specifications
+│
+├── .claude/                     # Claude Code configuration
+│   ├── agents/                 # Specialized agents
+│   └── skills/                 # Development skills
+│
+├── history/                     # Development history
+│   └── [date]-[topic].md       # Daily development logs
+│
+├── CLAUDE.md                    # Main navigation guide
+├── AGENTS.md                    # Agent behavior rules
+└── README.md                    # This file
 ```
 
 ---
 
-## 📚 Features
+## Features
 
-### Phase I - MVP (Basic CRUD)
+### Core Features (MVP Complete)
 
-#### ✅ User Story 1: Create and View Todos
-- Add todos with **title** (required, 1-200 characters)
-- Add optional **description** (0-1000 characters)
-- List all todos with ID, status, title, and description
-- Visual status indicators: ⬜ (incomplete) and ✅ (complete)
+#### 1. User Authentication
+- Email/password signup and login
+- Secure JWT tokens in httpOnly cookies
+- Protected routes (users can only access their own tasks)
+- Session management with Better Auth
 
-#### ✅ User Story 2: Mark Completion Status
-- Mark todos as **complete** by ID
-- Mark todos as **incomplete** by ID
-- Idempotent operations (safe to call multiple times)
+#### 2. Task Management (CRUD)
+- **Create** - Add new tasks with title and description
+- **Read** - View all tasks or individual task details
+- **Update** - Edit task details, mark as complete/incomplete
+- **Delete** - Remove tasks permanently
 
-#### ✅ User Story 3: Update Todo Content
-- Update **title** by ID (blank input keeps current)
-- Update **description** by ID (blank input keeps current)
-- Update one or both fields in a single operation
+#### 3. Task Properties
+- **Title** (required, 1-200 characters)
+- **Description** (optional, max 1000 characters)
+- **Completion Status** (boolean)
+- **Priority** (High, Medium, Low with color indicators)
+- **Tags** (comma-separated categories)
+- **Recurring Tasks** (Daily, Weekly, Monthly)
+- **Due Dates** (ISO 8601 datetime)
+- **Timestamps** (created_at, updated_at)
 
-#### ✅ User Story 4: Delete Todos
-- Delete todos by ID
-- IDs are **never reused** (sequential assignment)
-- Remaining todos preserve their original IDs
+#### 4. Kanban Board View
+- Drag-and-drop interface with @hello-pangea/dnd
+- Four status columns: Ready, In Progress, Review, Done
+- Visual task organization
+- Automatic status updates on drop
+- Color-coded priority indicators
 
----
+#### 5. Search & Filtering
+- **Real-time search** - Search across task titles and descriptions
+- **Filter by priority** - Show only High, Medium, or Low priority tasks
+- **Filter by tags** - Filter by specific tags
+- **Filter by status** - Show complete, incomplete, or all tasks
+- Combined filters for advanced queries
 
-### Phase II - Enhanced Features
-
-#### 🎯 User Story 5: Task Priorities
-- Set priority levels: **High** (🔴), **Medium** (🟡), **Low** (🔵)
-- Default priority: Medium
-- Case-insensitive input with automatic normalization
-- Visual priority indicators in todo list
-
-**Example:**
-```
-Enter priority (High/Medium/Low): high
-✅ Todo ID 1 priority set to High!
-```
-
-#### 🏷️ User Story 6: Tags and Categories
-- Add/remove tags (comma-separated)
-- Tags normalized to **lowercase** (case-insensitive)
-- Duplicate tags removed automatically
-- Tag length: 1-20 characters
-- Visual tag display in list
-
-**Example:**
-```
-Enter tags (comma-separated): Work, Urgent, PROJECT
-✅ Todo ID 1 tags updated!
-
-Display: work, urgent, project
-```
-
-#### 🔍 User Story 7: Search and Filter
-- **Search by keyword** (title/description)
-- **Filter by status** (complete/incomplete/all)
-- **Filter by priority** (High/Medium/Low)
-- **Filter by tags**
-- Case-insensitive search
-
-**Example:**
-```
-Search/Filter Menu:
-  1. Search by keyword
-  2. Filter by status
-  3. Filter by priority
-  4. Filter by tag
-
-Enter choice [1-4]: 1
-Enter keyword: meeting
-```
-
-#### 🔀 User Story 8: Sort Tasks
-- Sort by **ID** (ascending/descending)
-- Sort by **priority** (High→Low, Low→High)
-- Sort by **title** (A→Z, Z→A)
-- Sort by **status** (incomplete first/complete first)
-
-**Example:**
-```
-Sort Menu:
-  1. By ID (Ascending)
-  2. By ID (Descending)
-  3. By Priority (High to Low)
-  4. By Title (A to Z)
-
-Enter choice [1-4]: 3
-```
+#### 6. Task Sorting
+- **By Date** - Newest first or oldest first
+- **By Priority** - High to low or low to high
+- **By Title** - Alphabetical A-Z or Z-A
+- **By Status** - Incomplete first or complete first
 
 ---
 
-### Phase III - Advanced Features
+## API Endpoints
 
-#### 🔁 User Story 9: Recurring Tasks
-- Set recurrence patterns: **Daily**, **Weekly**, **Monthly**
-- Custom recurrence intervals (e.g., every 2 weeks, every 3 days)
-- **Auto-create next occurrence** when completed
-- Visual indicators: 🔁D (Daily), 🔁W (Weekly), 🔁M (Monthly)
-- Remove recurrence (set to None)
-- Backward compatible with Phase I/II todos
+### Authentication Endpoints
 
-**Example:**
 ```
-Enter todo ID: 1
-Recurrence options: None / Daily / Weekly / Monthly
-Enter pattern: Daily
-Enter interval (press Enter for 1): 1
-✅ Todo ID 1 recurrence set to Daily!
-
-# When you mark it complete:
-✅ Todo ID 1 marked as complete! Next occurrence created (ID: 5).
+POST   /api/auth/signup        # Create new user account
+POST   /api/auth/login         # Login and get JWT token
+POST   /api/auth/logout        # Logout (clear session)
+GET    /api/auth/session       # Get current user session
 ```
+
+### Task Endpoints (Authenticated)
+
+All task endpoints require a valid JWT token in the `Authorization: Bearer <token>` header.
+
+```
+GET    /api/{user_id}/tasks              # List all user's tasks
+POST   /api/{user_id}/tasks              # Create new task
+GET    /api/{user_id}/tasks/{id}         # Get single task by ID
+PUT    /api/{user_id}/tasks/{id}         # Update task (full update)
+DELETE /api/{user_id}/tasks/{id}         # Delete task
+PATCH  /api/{user_id}/tasks/{id}/complete # Toggle completion status
+```
+
+**Security:** Users can only access their own tasks. All endpoints verify the `user_id` in the URL matches the `user_id` in the JWT token.
 
 ---
 
-## 💡 Usage Examples
+## Environment Variables
 
-### Example 1: Daily Task Workflow
+### Backend `.env`
 
 ```bash
-# 1. Add a daily task
-Choose option: 1
-Enter title: Take vitamins
-Enter description: Daily health routine
-✅ Todo added successfully! (ID: 1)
+# Database - Neon Serverless PostgreSQL
+DATABASE_URL=postgresql+asyncpg://user:password@host:5432/dbname
 
-# 2. Set it to recur daily
-Choose option: 11
-Enter todo ID: 1
-Enter pattern: Daily
-✅ Todo ID 1 recurrence set to Daily!
+# Authentication - Must match frontend Better Auth secret
+BETTER_AUTH_SECRET=your-secret-key-minimum-32-characters
 
-# 3. Set high priority
-Choose option: 7
-Enter todo ID: 1
-Enter priority: High
-✅ Todo ID 1 priority set to High!
+# CORS - Allowed frontend origins (comma-separated)
+CORS_ORIGINS=http://localhost:3000,https://yourfrontend.com
 
-# 4. Add tags
-Choose option: 8
-Enter todo ID: 1
-Enter tags: health, daily, routine
-✅ Todo ID 1 tags updated!
-
-# 5. Mark complete (auto-creates next occurrence)
-Choose option: 5
-Enter todo ID: 1
-✅ Todo ID 1 marked as complete! Next occurrence created (ID: 2).
+# Optional
+DEBUG=false
 ```
 
-### Example 2: Project Management
+### Frontend `.env.local`
 
 ```bash
-# Add project tasks with priorities and tags
-1. Design mockups       [High]    [design, ui, urgent]
-2. API development      [High]    [backend, api, dev]
-3. Write documentation  [Medium]  [docs, writing]
-4. Code review          [Low]     [review, code]
+# Backend API URL
+NEXT_PUBLIC_API_URL=http://localhost:8000
 
-# Filter by priority
-Choose option: 9 (Search & Filter)
-Choose: 3 (Filter by priority)
-Enter priority: High
+# Better Auth Secret (same as backend)
+BETTER_AUTH_SECRET=your-secret-key-minimum-32-characters
 
-Results:
-1  | 🔴H |     | ⬜ | Design mockups   | design, ui, urgent
-2  | 🔴H |     | ⬜ | API development  | backend, api, dev
+# Better Auth URL (frontend base URL)
+BETTER_AUTH_URL=http://localhost:3000
 ```
 
-### Example 3: Recurring Meetings
+---
+
+## Development
+
+### Running Both Servers
+
+**Terminal 1 - Backend:**
+```bash
+cd backend
+uv run uvicorn app.main:app --reload
+```
+
+**Terminal 2 - Frontend:**
+```bash
+cd frontend
+npm run dev
+```
+
+### Running Tests
+
+**Test Status:** ✅ **All Backend Tests Passing (28/28)**
+
+**Backend Tests:**
+```bash
+cd backend
+uv run pytest                    # Run all tests
+uv run pytest -v                 # Verbose output
+```
+
+**Test Results:**
+```
+============================= test session starts =============================
+collected 28 items
+
+tests/test_auth.py::test_signup_success PASSED                     [  3%]
+tests/test_auth.py::test_signup_duplicate_email PASSED             [  7%]
+tests/test_auth.py::test_signup_invalid_email PASSED               [ 10%]
+tests/test_auth.py::test_signup_missing_fields PASSED              [ 14%]
+tests/test_auth.py::test_login_success PASSED                      [ 17%]
+tests/test_auth.py::test_login_wrong_password PASSED               [ 21%]
+tests/test_auth.py::test_login_nonexistent_email PASSED            [ 25%]
+tests/test_auth.py::test_password_hashed_in_database PASSED        [ 28%]
+tests/test_auth.py::test_jwt_token_contains_user_id PASSED         [ 32%]
+tests/test_auth.py::test_signup_creates_timestamps PASSED          [ 35%]
+tests/test_tasks.py::test_create_task_success PASSED               [ 39%]
+tests/test_tasks.py::test_create_task_with_tags PASSED             [ 42%]
+tests/test_tasks.py::test_create_task_with_recurrence PASSED       [ 46%]
+tests/test_tasks.py::test_create_task_without_auth PASSED          [ 50%]
+tests/test_tasks.py::test_create_task_invalid_title PASSED         [ 53%]
+tests/test_tasks.py::test_create_task_title_too_long PASSED        [ 57%]
+tests/test_tasks.py::test_get_all_tasks PASSED                     [ 60%]
+tests/test_tasks.py::test_get_tasks_filters_by_user PASSED         [ 64%]
+tests/test_tasks.py::test_get_tasks_forbidden_other_user PASSED    [ 67%]
+tests/test_tasks.py::test_get_single_task PASSED                   [ 71%]
+tests/test_tasks.py::test_get_task_not_found PASSED                [ 75%]
+tests/test_tasks.py::test_update_task_success PASSED               [ 78%]
+tests/test_tasks.py::test_update_task_partial PASSED               [ 82%]
+tests/test_tasks.py::test_update_task_forbidden_other_user PASSED  [ 85%]
+tests/test_tasks.py::test_delete_task_success PASSED               [ 89%]
+tests/test_tasks.py::test_delete_task_forbidden_other_user PASSED  [ 92%]
+tests/test_tasks.py::test_toggle_task_completion PASSED            [ 96%]
+tests/test_tasks.py::test_task_timestamps_updated PASSED           [100%]
+
+============================= 28 passed in 12.66s =============================
+```
+
+**Test Coverage:**
+- ✅ **Authentication Tests (10):** Signup, login, password hashing, JWT tokens
+- ✅ **Task Management Tests (18):** CRUD operations, authorization, validation
+
+**Frontend Tests:**
+
+Frontend is fully functional with manual testing complete. Automated tests can be added:
+```bash
+cd frontend
+npm test                         # Run tests (when configured)
+npm run test:watch               # Watch mode
+```
+
+### Code Quality
+
+**Backend:**
+```bash
+# Type checking (mypy)
+uv run mypy app/
+
+# Linting (ruff)
+uv run ruff check app/
+```
+
+**Frontend:**
+```bash
+# Type checking
+npm run type-check
+
+# Linting
+npm run lint
+npm run lint:fix
+```
+
+### Database Migrations
 
 ```bash
-# Weekly team meeting
-Add Todo: "Team standup"
-Set Recurrence: Weekly
-Set Priority: Medium
-Add Tags: work, meeting, recurring
+cd backend
 
-# Monthly billing
-Add Todo: "Pay rent"
-Set Recurrence: Monthly
-Set Priority: High
-Add Tags: finance, monthly, bills
+# Create migration
+alembic revision --autogenerate -m "description"
+
+# Apply migrations
+alembic upgrade head
+
+# Rollback migration
+alembic downgrade -1
 ```
 
 ---
 
-## 🎨 Visual Indicators
+## Architecture
 
-### Status Indicators
-- ⬜ **Incomplete** - Task not yet done
-- ✅ **Complete** - Task finished
+### System Architecture
 
-### Priority Indicators
-- 🔴H **High** - Urgent/important tasks
-- 🟡M **Medium** - Normal priority (default)
-- 🔵L **Low** - Low priority tasks
+```
+┌─────────────────┐         ┌─────────────────┐         ┌─────────────────┐
+│                 │         │                 │         │                 │
+│  Next.js        │ ←──────→│  FastAPI        │ ←──────→│  PostgreSQL     │
+│  Frontend       │  HTTPS  │  Backend        │   SQL   │  Database       │
+│  (Port 3000)    │         │  (Port 8000)    │         │  (Neon Cloud)   │
+│                 │         │                 │         │                 │
+└─────────────────┘         └─────────────────┘         └─────────────────┘
+```
 
-### Recurrence Indicators
-- 🔁D **Daily** - Repeats every day(s)
-- 🔁W **Weekly** - Repeats every week(s)
-- 🔁M **Monthly** - Repeats every month(s)
+### Authentication Flow
+
+1. User submits email/password → Frontend
+2. Frontend sends to `/api/auth/login` → Backend
+3. Backend verifies credentials → Database
+4. Backend returns JWT token → Frontend
+5. Frontend stores token in httpOnly cookie
+6. All subsequent requests include token in `Authorization` header
+7. Backend verifies token on each request
+8. Backend ensures `user_id` in URL matches token
+
+### Data Flow (Create Task)
+
+1. User fills out TaskForm → Frontend
+2. Frontend validates with Zod schema
+3. Frontend sends POST `/api/{user_id}/tasks` with JWT
+4. Backend verifies JWT and `user_id`
+5. Backend validates with Pydantic schema
+6. Backend creates Task object with SQLModel
+7. Database INSERT operation
+8. Backend returns 201 Created with task data
+9. Frontend updates UI with new task
 
 ---
 
-## 🧪 Testing
+## Spec-Driven Development
 
-### Run All Tests
+This project follows **strict spec-driven development** using SpecKit Plus:
 
+### Development Lifecycle
+
+```
+1. Constitution (WHY)     → Principles in .specify/memory/constitution.md
+2. Specify (WHAT)         → Feature specs in specs/features/
+3. Plan (HOW)             → Architecture in specs/architecture.md
+4. Tasks (BREAKDOWN)      → Task lists in spec files
+5. Implement (CODE)       → Backend + Frontend implementation
+```
+
+### Key Documents
+
+- **`CLAUDE.md`** - Main navigation guide for Claude Code
+- **`AGENTS.md`** - Agent behavior rules and responsibilities
+- **`specs/overview.md`** - Project overview and goals
+- **`specs/architecture.md`** - System architecture
+- **`specs/features/`** - Feature specifications
+- **`specs/api/`** - API endpoint specifications
+- **`specs/database/`** - Database schemas
+- **`specs/ui/`** - UI component specifications
+
+### For Developers
+
+Before implementing any feature:
+
+1. Read the relevant spec in `specs/features/[feature].md`
+2. Review related API spec in `specs/api/[endpoints].md`
+3. Check database spec in `specs/database/[table].md`
+4. Review UI spec in `specs/ui/[component].md`
+5. Implement according to specifications
+6. Verify all acceptance criteria met
+7. Test edge cases from spec
+
+---
+
+## Security
+
+### Authentication Security
+
+- **JWT Tokens** - Signed with BETTER_AUTH_SECRET
+- **httpOnly Cookies** - Prevents XSS attacks
+- **Token Expiry** - 7 days (configurable)
+- **Secure Storage** - Tokens not accessible via JavaScript
+
+### Authorization Security
+
+- **User Isolation** - Users can only access their own data
+- **ID Verification** - URL `user_id` must match JWT `user_id`
+- **Database Filtering** - All queries filter by `user_id`
+- **403 Forbidden** - Returned if user tries to access other users' data
+
+### Data Security
+
+- **Password Hashing** - bcrypt with salt
+- **SQL Injection Prevention** - SQLModel ORM parameterized queries
+- **XSS Prevention** - httpOnly cookies, React auto-escaping
+- **CSRF Protection** - SameSite cookies
+- **CORS Restrictions** - Only allowed origins
+- **Input Validation** - Frontend (Zod) + Backend (Pydantic)
+
+---
+
+## Deployment
+
+### Production Deployment
+
+**Frontend (Vercel):**
 ```bash
-# Run all 56 unit tests
-uv run python -m unittest discover -s tests -p "test_*.py" -v
-
-# Expected output:
-# Ran 56 tests in 0.005s
-# OK
+# Automatic deployment from main branch
+# Configure environment variables in Vercel dashboard
 ```
 
-### Run Specific Test Suites
-
+**Backend (Railway/Render/AWS):**
 ```bash
-# Test models (validation)
-uv run python -m unittest tests.unit.test_models -v
-
-# Test specific feature
-uv run python -m unittest tests.unit.test_models.TestValidateRecurrencePattern -v
+# Set environment variables
+# Deploy from GitHub repository
+# Use production WSGI server (gunicorn + uvicorn workers)
 ```
 
-### Test Coverage Breakdown
-
-**56 Unit Tests Total:**
-- ✅ 5 tests - ID validation
-- ✅ 6 tests - Title validation
-- ✅ 5 tests - Description validation
-- ✅ 7 tests - Priority validation
-- ✅ 9 tests - Tags validation
-- ✅ 8 tests - Recurrence pattern validation
-- ✅ 3 tests - Phase II migration
-- ✅ 2 tests - Phase III migration
-- ✅ 5 tests - Phase II todo creation
-- ✅ 3 tests - Phase III todo creation
-
-**100% Test Coverage** - All features thoroughly tested!
+**Database (Neon):**
+- Production branch with auto-scaling
+- Connection pooling enabled
+- Backup and restore configured
 
 ---
 
-## 📁 Project Structure
+## Project Timeline
 
-```
-HackathonII-TODO-APP/
-│
-├── src/                          # Source code
-│   ├── main.py                   # Application entry point
-│   ├── cli.py                    # CLI interface and display
-│   ├── storage.py                # In-memory storage and CRUD
-│   └── models.py                 # Data validation and creation
-│
-├── tests/                        # Test suite
-│   └── unit/
-│       └── test_models.py        # 56 unit tests
-│
-├── specs/                        # Specification documents
-│   ├── 001-cli-todo-app/         # Phase I spec
-│   ├── 002-cli-todo-app-enhanced/# Phase II spec
-│   └── 003-cli-todo-app-advanced/# Phase III spec
-│
-├── .specify/memory/              # Project configuration
-│   └── constitution.md           # Development principles
-│
-├── history/prompts/              # Development history (PHRs)
-│
-├── pyproject.toml                # UV project configuration
-├── README.md                     # This file
-├── CLAUDE.md                     # Developer documentation
-└── LICENSE                       # License file
-```
+### Phase II Milestones
+
+- **Milestone 1:** Specifications ✅ Complete (Dec 30, 2025)
+- **Milestone 2:** Backend Foundation ✅ Complete (Jan 1, 2026)
+- **Milestone 3:** Frontend Foundation ✅ Complete (Jan 2, 2026)
+- **Milestone 4:** Feature Implementation ✅ Complete (Jan 6, 2026)
+- **Milestone 5:** Testing & Polish ✅ Complete (Jan 7, 2026)
+- **Milestone 6:** Deployment ⏳ Planned
 
 ---
 
-## 🛠️ Technology Stack
-
-| Component | Technology |
-|-----------|------------|
-| **Language** | Python 3.13+ |
-| **Package Manager** | UV |
-| **CLI Colors** | Colorama |
-| **Date Handling** | python-dateutil |
-| **Testing** | unittest (built-in) |
-| **Architecture** | Functional Programming |
-| **Storage** | In-Memory (no persistence) |
-| **Development** | Claude Code + Spec-Kit Plus |
-
----
-
-## 🏗️ Architecture
-
-### Functional Programming Approach
-- **No Classes** - Pure functions only
-- **Immutable Data** - Functions don't modify inputs
-- **Separation of Concerns** - Clear layer boundaries
-
-### Data Flow
-
-```
-┌─────────────┐
-│   User      │
-│  (Terminal) │
-└──────┬──────┘
-       │
-       ▼
-┌─────────────┐
-│   main.py   │  ← Main menu loop
-└──────┬──────┘
-       │
-       ▼
-┌─────────────┐
-│   cli.py    │  ← User interaction & display
-└──────┬──────┘
-       │
-       ▼
-┌─────────────┐
-│  storage.py │  ← CRUD operations
-└──────┬──────┘
-       │
-       ▼
-┌─────────────┐
-│  models.py  │  ← Data validation
-└──────┬──────┘
-       │
-       ▼
-┌─────────────┐
-│  In-Memory  │  ← List of dictionaries
-│   Storage   │
-└─────────────┘
-```
-
-### Data Model
-
-```python
-{
-    "id": int,                        # Unique sequential ID
-    "title": str,                     # 1-200 characters
-    "description": str,               # 0-1000 characters
-    "completed": bool,                # True/False
-    "priority": str,                  # High/Medium/Low
-    "tags": list[str],                # Lowercase normalized
-    "created_at": datetime,           # Auto-assigned timestamp
-    "recurrence_pattern": str | None, # Daily/Weekly/Monthly/None
-    "recurrence_interval": int,       # Default 1
-    "next_occurrence": datetime | None# Calculated on complete
-}
-```
-
----
-
-## 📋 Development Methodology
-
-This project was built using **Spec-Driven Development (SDD)**:
-
-1. **Specification** → Define requirements and user stories
-2. **Planning** → Architecture decisions and technical design
-3. **Tasks** → Break down into dependency-ordered tasks
-4. **Implementation** → AI-assisted test-driven development
-
-### Test-Driven Development (TDD)
-
-Every feature follows the **Red-Green-Refactor** cycle:
-
-1. 🔴 **Red** - Write failing test first
-2. 🟢 **Green** - Write minimal code to pass
-3. 🔵 **Refactor** - Clean up and optimize
-
----
-
-## ⚠️ Important Notes
-
-### In-Memory Storage
-- ⚠️ **No Persistence** - All data is lost when the app exits
-- This is **by design** for Hackathon Phase 1
-- Future phases will add file/database persistence
-
-### Capacity Limits
-- Maximum **1000 todos** (NFR-007)
-- Title: **1-200 characters**
-- Description: **0-1000 characters**
-- Tags: **1-20 characters** each
-
-### Platform Support
-- ✅ **Windows** (with UTF-8 console support)
-- ✅ **macOS** (full emoji support)
-- ✅ **Linux** (full emoji support)
-
----
-
-## 🎯 Use Cases
-
-### Personal Productivity
-- Daily routines (exercise, vitamins, meditation)
-- Shopping lists
-- Personal goals and habits
-
-### Work Management
-- Project tasks with deadlines
-- Team meetings (recurring)
-- Code reviews and documentation
-
-### Financial Planning
-- Recurring bills (rent, utilities)
-- Budget tracking
-- Payment reminders
-
-### Health & Wellness
-- Medication reminders (daily)
-- Doctor appointments (recurring)
-- Fitness goals
-
----
-
-## 🚧 Future Enhancements
-
-### Hackathon Phase 2 (Planned)
-- [ ] File persistence (JSON/CSV export)
-- [ ] Due dates and reminders
-- [ ] Todo subtasks/checklist items
-- [ ] Undo/Redo functionality
-- [ ] Todo templates
-
-### Hackathon Phase 3 (Planned)
-- [ ] Database integration (SQLite)
-- [ ] Multi-user support
-- [ ] REST API
-- [ ] Web interface
-- [ ] Mobile app
-
----
-
-## 📖 Documentation
-
-- **User Guide**: This README
-- **Developer Guide**: [CLAUDE.md](./CLAUDE.md)
-- **Specifications**: [specs/](./specs/)
-- **Constitution**: [.specify/memory/constitution.md](./.specify/memory/constitution.md)
-
----
-
-## 🤝 Contributing
+## Contributing
 
 This is an educational hackathon project. Contributions are welcome!
 
@@ -567,61 +535,73 @@ This is an educational hackathon project. Contributions are welcome!
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Write tests for your feature
-4. Implement the feature
-5. Ensure all tests pass (`uv run python -m unittest discover -s tests -v`)
-6. Commit your changes (`git commit -m 'Add amazing feature'`)
-7. Push to the branch (`git push origin feature/amazing-feature`)
-8. Open a Pull Request
+3. Read the relevant specifications in `specs/`
+4. Write tests for your feature
+5. Implement the feature according to specs
+6. Ensure all tests pass
+7. Commit your changes (`git commit -m 'Add amazing feature'`)
+8. Push to the branch (`git push origin feature/amazing-feature`)
+9. Open a Pull Request
 
 ### Development Guidelines
 
-- ✅ Follow functional programming (no classes)
-- ✅ Write tests first (TDD approach)
-- ✅ Maintain 100% test coverage
-- ✅ Follow existing code style
+- ✅ Read specifications before implementing
+- ✅ Follow TypeScript strict mode (frontend)
+- ✅ Use Python 3.13+ with type hints (backend)
+- ✅ Write tests (TDD approach preferred)
+- ✅ Use async/await for all I/O operations
+- ✅ Follow existing code patterns
 - ✅ Update documentation
+- ✅ Verify security requirements (user isolation, JWT verification)
 
 ---
 
-## 📝 License
+## Documentation
+
+- **Main Guide:** [CLAUDE.md](./CLAUDE.md) - Navigation for Claude Code
+- **Agent Rules:** [AGENTS.md](./AGENTS.md) - Agent behavior and responsibilities
+- **Frontend Docs:** [frontend/README.md](./frontend/README.md) - Frontend-specific guide
+- **Backend Docs:** [backend/README.md](./backend/README.md) - Backend-specific guide
+- **Specifications:** [specs/](./specs/) - All project specifications
+- **Architecture:** [specs/architecture.md](./specs/architecture.md) - System design
+- **Development History:** [history/](./history/) - Daily development logs
+
+---
+
+## Support
+
+- **Issues:** [GitHub Issues](https://github.com/Roofan-Jlove/Hackathon-II-TODO-APP/issues)
+- **Documentation:** See `CLAUDE.md` and component-specific README files
+- **API Docs:** http://localhost:8000/docs (when backend is running)
+
+---
+
+## Acknowledgments
+
+- **Claude Code** - AI-powered development assistant
+- **SpecKit Plus** - Specification-driven development framework
+- **Next.js** - React framework for production
+- **FastAPI** - Modern Python web framework
+- **Neon** - Serverless PostgreSQL platform
+- **Better Auth** - Authentication solution for Next.js
+- **Tailwind CSS** - Utility-first CSS framework
+
+---
+
+## License
 
 Educational project for learning purposes.
 
 ---
 
-## 🙏 Acknowledgments
-
-- **Claude Code** - AI-powered development assistant
-- **Spec-Kit Plus** - Specification-driven development framework
-- **UV** - Modern Python package manager
-- **Colorama** - Terminal color support
-- **python-dateutil** - Date arithmetic library
-
----
-
-## 📞 Support
-
-- **Issues**: [GitHub Issues](https://github.com/Roofan-Jlove/Hackathon-II-TODO-APP/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/Roofan-Jlove/Hackathon-II-TODO-APP/discussions)
-- **Documentation**: [CLAUDE.md](./CLAUDE.md)
-
----
-
-## 📊 Project Stats
-
-- **Total Lines of Code**: ~2,500+
-- **Test Coverage**: 100% (56/56 tests passing)
-- **Features Implemented**: 9 User Stories
-- **Development Time**: Hackathon Phase 1
-- **Code Quality**: Production Ready
-
----
-
 <div align="center">
 
-**Built with ❤️ using Python, UV, and Claude Code**
+**Built with ❤️ using Next.js, FastAPI, and Claude Code**
 
-[⬆ Back to Top](#-cli-todo-manager---hackathon-phase-1)
+**Phase II - Full-Stack Web Application**
+
+**Status:** MVP Complete - Ready for Testing
+
+[⬆ Back to Top](#todo-manager---phase-ii-web-application)
 
 </div>
