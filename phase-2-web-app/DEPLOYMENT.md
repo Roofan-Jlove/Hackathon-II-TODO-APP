@@ -1,398 +1,218 @@
-# 🚀 Deployment Guide - Todo App
+# Deployment Guide - Phase II Web Application
 
-Complete guide for deploying the FastAPI backend and Next.js frontend to production.
+This guide provides step-by-step instructions for deploying the Todo Manager web application to production.
 
----
+## Table of Contents
 
-## 📊 Deployment Architecture
-
-```
-┌─────────────────┐      ┌──────────────────┐      ┌─────────────────┐
-│   Vercel        │─────▶│  Render/Railway  │─────▶│ Neon PostgreSQL │
-│  (Frontend)     │ HTTPS │   (Backend API)  │ SSL  │   (Database)    │
-│   Next.js       │◀─────│    FastAPI       │◀─────│                 │
-└─────────────────┘      └──────────────────┘      └─────────────────┘
-```
+1. [Prerequisites](#prerequisites)
+2. [Backend Deployment (Railway)](#backend-deployment-railway)
+3. [Frontend Deployment (Vercel)](#frontend-deployment-vercel)
+4. [Post-Deployment Configuration](#post-deployment-configuration)
+5. [Verification & Testing](#verification--testing)
+6. [Troubleshooting](#troubleshooting)
 
 ---
 
-## 🎯 Recommended Options
+## Prerequisites
 
-### Option 1: FREE Tier (Best for Testing/Learning)
-- **Backend**: Render.com (Free)
-- **Frontend**: Vercel (Free)
-- **Database**: Neon PostgreSQL (Free tier - already configured)
+### Required Accounts
 
-### Option 2: Production (Best Performance)
-- **Backend**: Railway ($5-10/month)
-- **Frontend**: Vercel (Free)
-- **Database**: Neon PostgreSQL (Free tier or paid)
+1. **GitHub Account** - For repository hosting
+2. **Neon Account** - For PostgreSQL database ([neon.tech](https://neon.tech))
+3. **Railway Account** - For backend hosting ([railway.app](https://railway.app))
+4. **Vercel Account** - For frontend hosting ([vercel.com](https://vercel.com))
 
----
+### Required Tools
 
-## 📦 Part 1: Backend Deployment
-
-### Step 1: Prepare Backend Files
-
-#### 1.1 Create `requirements.txt`
-
-Your backend needs a `requirements.txt` for deployment. Check if it exists:
-
-```bash
-cd phase-2-web-app/backend
-cat requirements.txt
-```
-
-If missing or incomplete, create it with:
-
-```txt
-fastapi>=0.109.0
-uvicorn[standard]>=0.27.0
-sqlmodel>=0.0.14
-asyncpg>=0.29.0
-pydantic>=2.5.0
-pydantic-settings>=2.1.0
-python-jose[cryptography]>=3.3.0
-passlib[bcrypt]>=1.7.4
-python-multipart>=0.0.6
-alembic>=1.13.0
-python-dotenv>=1.0.0
-```
-
-#### 1.2 Create `Procfile` (for Render)
-
-```bash
-# phase-2-web-app/backend/Procfile
-web: uvicorn app.main:app --host 0.0.0.0 --port $PORT
-```
-
-#### 1.3 Create `railway.json` (for Railway - optional)
-
-```json
-{
-  "$schema": "https://railway.app/railway.schema.json",
-  "build": {
-    "builder": "NIXPACKS"
-  },
-  "deploy": {
-    "startCommand": "uvicorn app.main:app --host 0.0.0.0 --port $PORT",
-    "restartPolicyType": "ON_FAILURE",
-    "restartPolicyMaxRetries": 10
-  }
-}
-```
-
-#### 1.4 Create `runtime.txt` (specify Python version)
-
-```txt
-python-3.13
-```
+- Git installed locally
+- Node.js 18.x or higher
+- Python 3.13 or higher (for local testing)
 
 ---
 
-### Step 2A: Deploy to Render (FREE Option)
+## Backend Deployment (Railway)
 
-#### 2.1 Sign up for Render
-1. Go to https://render.com
-2. Sign up with GitHub
-3. Connect your repository
+### Step 1: Set Up Database (Neon PostgreSQL)
 
-#### 2.2 Create New Web Service
-1. Click **"New +"** → **"Web Service"**
-2. Connect your GitHub repository
-3. Select the repository: `HackathonII-TODO-APP`
-4. Configure:
-   - **Name**: `todo-api` (or your choice)
-   - **Region**: Choose closest to you
-   - **Branch**: `main`
-   - **Root Directory**: `phase-2-web-app/backend`
-   - **Runtime**: `Python 3`
-   - **Build Command**: `pip install -r requirements.txt`
-   - **Start Command**: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
-   - **Instance Type**: `Free`
+1. **Create Neon Account**
+   - Go to [neon.tech](https://neon.tech)
+   - Sign up with GitHub or email
 
-#### 2.3 Set Environment Variables
-In Render dashboard, add these environment variables:
+2. **Create New Project**
+   - Click "Create Project"
+   - Name: \`todo-app-production\`
+   - Region: Choose closest to your users (e.g., US East)
+   - PostgreSQL version: 16 (latest)
 
-```
-DATABASE_URL=postgresql+asyncpg://neondb_owner:npg_HvxfMqG5Fb7Y@ep-withered-sunset-a1kv12v0-pooler.ap-southeast-1.aws.neon.tech/neondb
+3. **Get Connection String**
+   - Go to project dashboard
+   - Copy the connection string
+   - **Important**: Change the protocol from \`postgresql://\` to \`postgresql+asyncpg://\`
 
-BETTER_AUTH_SECRET=b0e3cc396c2f15582a8f6ca6d0a2cb5f32e227cdd6e1d02d5517e215721f225c
+   **Example:**
+   \`\`\`
+   Original: postgresql://username:password@ep-cool-smoke-123456.us-east-2.aws.neon.tech/neondb
+   Updated:  postgresql+asyncpg://username:password@ep-cool-smoke-123456.us-east-2.aws.neon.tech/neondb?sslmode=require
+   \`\`\`
 
-CORS_ORIGINS=https://your-frontend-url.vercel.app,http://localhost:3000
+4. **Save Connection String**
+   - Keep this for Railway environment variables
 
-DEBUG=False
-```
+### Step 2: Generate Secrets
 
-**Important**: Update `CORS_ORIGINS` with your actual Vercel URL after frontend deployment.
+Generate secure secrets for authentication:
 
-#### 2.4 Deploy
-- Click **"Create Web Service"**
-- Wait for build to complete (3-5 minutes)
-- Your API will be live at: `https://todo-api.onrender.com`
+\`\`\`bash
+# Generate BETTER_AUTH_SECRET (minimum 32 characters)
+openssl rand -hex 32
 
----
+# Generate JWT_SECRET (minimum 32 characters)
+openssl rand -hex 32
+\`\`\`
 
-### Step 2B: Deploy to Railway (PAID Option - Better Performance)
+**Save these secrets** - you'll need the same \`BETTER_AUTH_SECRET\` for both backend and frontend!
 
-#### 2.1 Sign up for Railway
-1. Go to https://railway.app
-2. Sign up with GitHub
-3. Add payment method (required even for trial)
+### Step 3: Deploy to Railway
 
-#### 2.2 Create New Project
-1. Click **"New Project"**
-2. Select **"Deploy from GitHub repo"**
-3. Choose your repository
-4. Railway will auto-detect the Python app
+1. **Create Railway Account**
+   - Go to [railway.app](https://railway.app)
+   - Sign up with GitHub
 
-#### 2.3 Configure Service
-1. Click on the service
-2. Go to **Settings**
-3. Set:
-   - **Root Directory**: `phase-2-web-app/backend`
-   - **Start Command**: `uvicorn app.main:app --host 0.0.0.0 --port $PORT`
+2. **Create New Project**
+   - Click "New Project"
+   - Select "Deploy from GitHub repo"
+   - Authorize Railway to access your repository
+   - Select your repository
 
-#### 2.4 Set Environment Variables
-In Railway dashboard, add:
+3. **Configure Service**
+   - Railway will detect the backend automatically
+   - Service name: \`todo-backend\`
+   - Root directory: \`Phase-2-Web-App/backend\`
 
-```
-DATABASE_URL=postgresql+asyncpg://neondb_owner:npg_HvxfMqG5Fb7Y@ep-withered-sunset-a1kv12v0-pooler.ap-southeast-1.aws.neon.tech/neondb
+4. **Set Environment Variables**
 
-BETTER_AUTH_SECRET=b0e3cc396c2f15582a8f6ca6d0a2cb5f32e227cdd6e1d02d5517e215721f225c
+   Go to service → Variables → Add variables:
 
-CORS_ORIGINS=https://your-frontend-url.vercel.app,http://localhost:3000
+   \`\`\`bash
+   DATABASE_URL=postgresql+asyncpg://your-connection-string-from-neon
+   BETTER_AUTH_SECRET=your-generated-secret-from-step-2
+   JWT_SECRET=your-generated-jwt-secret-from-step-2
+   CORS_ORIGINS=http://localhost:3000
+   DEBUG=False
+   JWT_ALGORITHM=HS256
+   \`\`\`
 
-DEBUG=False
-```
+   **Note**: We'll update \`CORS_ORIGINS\` after deploying the frontend.
 
-#### 2.5 Generate Domain
-1. Go to **Settings** → **Networking**
-2. Click **"Generate Domain"**
-3. Your API will be at: `https://your-app.railway.app`
+5. **Deploy**
+   - Click "Deploy"
+   - Railway will automatically install dependencies and run
+   - Wait for deployment to complete (2-5 minutes)
 
----
+6. **Get Backend URL**
+   - Once deployed, Railway provides a URL
+   - Click "Generate Domain" if not automatically created
+   - **Save this URL** for frontend configuration
 
-## 🎨 Part 2: Frontend Deployment (Vercel)
-
-### Step 1: Prepare Frontend
-
-#### 1.1 Update Environment Variables
-
-Create/update `phase-2-web-app/frontend/.env.production`:
-
-```env
-# Production backend API URL (update after backend deployment)
-NEXT_PUBLIC_API_URL=https://todo-api.onrender.com
-
-# OR for Railway:
-# NEXT_PUBLIC_API_URL=https://your-app.railway.app
-
-NODE_ENV=production
-```
-
-#### 1.2 Verify Build Configuration
-
-Check `phase-2-web-app/frontend/next.config.js`:
-
-```javascript
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  output: 'standalone', // Optimized for deployment
-  reactStrictMode: true,
-  swcMinify: true,
-}
-
-module.exports = nextConfig
-```
-
-### Step 2: Deploy to Vercel
-
-#### 2.1 Sign up for Vercel
-1. Go to https://vercel.com
-2. Sign up with GitHub
-3. Import your repository
-
-#### 2.2 Configure Project
-1. Click **"Add New..."** → **"Project"**
-2. Import `HackathonII-TODO-APP` repository
-3. Configure:
-   - **Framework Preset**: `Next.js`
-   - **Root Directory**: `phase-2-web-app/frontend`
-   - **Build Command**: `npm run build` (auto-detected)
-   - **Output Directory**: `.next` (auto-detected)
-   - **Install Command**: `npm install` (auto-detected)
-
-#### 2.3 Add Environment Variables
-In Vercel project settings, add:
-
-```
-NEXT_PUBLIC_API_URL=https://todo-api.onrender.com
-```
-
-(Use your actual backend URL from Render/Railway)
-
-#### 2.4 Deploy
-- Click **"Deploy"**
-- Wait 2-3 minutes
-- Your app will be live at: `https://your-app.vercel.app`
+7. **Verify Deployment**
+   - Open \`https://your-backend-url.railway.app/\`
+   - You should see: \`{"status":"ok","message":"Todo API is running"}\`
 
 ---
 
-## 🔄 Part 3: Connect Frontend & Backend
+## Frontend Deployment (Vercel)
+
+### Step 1: Deploy to Vercel
+
+1. **Create Vercel Account**
+   - Go to [vercel.com](https://vercel.com)
+   - Sign up with GitHub
+
+2. **Import Project**
+   - Click "Add New" → "Project"
+   - Import your repository
+   - Framework Preset: **Next.js** (auto-detected)
+
+3. **Configure Build Settings**
+   - Root Directory: \`Phase-2-Web-App/frontend\`
+   - Framework: Next.js
+   - Build Command: \`npm run build\`
+   - Node.js Version: 18.x
+
+4. **Set Environment Variables**
+
+   Click "Environment Variables" and add:
+
+   \`\`\`bash
+   NEXT_PUBLIC_API_URL=https://your-backend-url.railway.app
+   BETTER_AUTH_SECRET=your-same-secret-from-railway
+   BETTER_AUTH_URL=https://your-frontend-url.vercel.app
+   NODE_ENV=production
+   \`\`\`
+
+5. **Deploy**
+   - Click "Deploy"
+   - Wait for deployment (2-3 minutes)
+
+6. **Get Frontend URL**
+   - Once deployed, Vercel provides a URL
+   - **Save this URL**
+
+---
+
+## Post-Deployment Configuration
 
 ### Step 1: Update Backend CORS
 
-After frontend deployment, update backend `CORS_ORIGINS`:
+1. Go to Railway → Your service → Variables
+2. Update \`CORS_ORIGINS\`:
+   \`\`\`bash
+   CORS_ORIGINS=https://your-actual-frontend.vercel.app
+   \`\`\`
 
-**On Render:**
-1. Go to Render dashboard
-2. Select your backend service
-3. Go to **Environment**
-4. Update `CORS_ORIGINS`:
-   ```
-   CORS_ORIGINS=https://your-app.vercel.app,http://localhost:3000
-   ```
-5. Save (this will trigger auto-redeploy)
+### Step 2: Update Frontend BETTER_AUTH_URL
 
-**On Railway:**
-1. Go to Railway dashboard
-2. Select your backend service
-3. Go to **Variables**
-4. Update `CORS_ORIGINS`
-5. Redeploy
-
-### Step 2: Test the Connection
-
-1. Open your Vercel URL: `https://your-app.vercel.app`
-2. Try to sign up/login
-3. Check browser console for errors
-4. Verify API calls are going to your backend URL
+1. Go to Vercel → Settings → Environment Variables
+2. Update \`BETTER_AUTH_URL\` with your actual Vercel URL
 
 ---
 
-## ✅ Deployment Checklist
+## Verification & Testing
 
-### Backend Checklist
-- [ ] `requirements.txt` exists and is complete
-- [ ] `Procfile` created (for Render)
-- [ ] Environment variables configured
-- [ ] `DEBUG=False` in production
-- [ ] CORS origins include your Vercel URL
-- [ ] Database migrations run (if needed)
-- [ ] Backend is accessible at `/docs` (Swagger UI)
-- [ ] Health check endpoint works: `GET /`
+### Test Backend API
 
-### Frontend Checklist
-- [ ] `NEXT_PUBLIC_API_URL` points to backend
-- [ ] Build succeeds locally: `npm run build`
-- [ ] Environment variables set in Vercel
-- [ ] No hardcoded localhost URLs in code
-- [ ] CORS allows requests from Vercel domain
+\`\`\`bash
+curl https://your-backend.railway.app/
+# Should return: {"status":"ok","message":"Todo API is running"}
+\`\`\`
+
+### Test Frontend
+
+1. Visit your Vercel URL
+2. Sign up for a new account
+3. Create a test task
+4. Verify everything works
 
 ---
 
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Backend Issues
 
-**Problem: Backend is sleeping (Render free tier)**
-- Solution: Upgrade to paid tier OR use Railway OR ping your backend every 10 minutes with a cron job
+**CORS errors**: Verify \`CORS_ORIGINS\` includes your Vercel URL
 
-**Problem: CORS errors**
-```
-Access to fetch at 'https://api...' from origin 'https://app...' has been blocked by CORS
-```
-- Solution: Add your Vercel URL to `CORS_ORIGINS` in backend environment variables
+**Database connection fails**: Check connection string uses \`postgresql+asyncpg://\` and \`?sslmode=require\`
 
-**Problem: Database connection fails**
-- Check `DATABASE_URL` is correct in backend env vars
-- Verify Neon database is accessible
-- Check if asyncpg is installed: `asyncpg>=0.29.0`
+**500 errors**: Check Railway logs
 
 ### Frontend Issues
 
-**Problem: API calls fail**
-- Check `NEXT_PUBLIC_API_URL` is set correctly
-- Verify backend is running and accessible
-- Check browser console for actual error
+**API calls fail**: Verify \`NEXT_PUBLIC_API_URL\` is correct
 
-**Problem: Environment variables not loaded**
-- In Vercel, environment variables must start with `NEXT_PUBLIC_` to be exposed to browser
-- Redeploy after adding environment variables
+**Auth fails**: Verify \`BETTER_AUTH_SECRET\` matches backend
 
 ---
 
-## 📊 Cost Breakdown
+**Deployment Complete!** 🚀
 
-### FREE Tier (Option 1)
-- Backend (Render): **$0/month** (with sleep)
-- Frontend (Vercel): **$0/month**
-- Database (Neon): **$0/month** (0.5 GB storage)
-- **Total: $0/month** ✅
-
-### Paid Tier (Option 2)
-- Backend (Railway): **$5-10/month** (no sleep)
-- Frontend (Vercel): **$0/month**
-- Database (Neon): **$0/month** (or $19/month for more)
-- **Total: ~$5-10/month**
-
----
-
-## 🚀 Quick Deploy Commands
-
-### Backend (Render)
-```bash
-cd phase-2-web-app/backend
-
-# Ensure requirements.txt is up to date
-pip freeze > requirements.txt
-
-# Create Procfile
-echo "web: uvicorn app.main:app --host 0.0.0.0 --port \$PORT" > Procfile
-
-# Commit and push
-git add .
-git commit -m "chore: prepare backend for Render deployment"
-git push
-```
-
-### Frontend (Vercel)
-```bash
-cd phase-2-web-app/frontend
-
-# Test build locally
-npm run build
-
-# Create production env
-echo "NEXT_PUBLIC_API_URL=https://your-backend-url.onrender.com" > .env.production
-
-# Commit and push
-git add .
-git commit -m "chore: prepare frontend for Vercel deployment"
-git push
-```
-
----
-
-## 📚 Additional Resources
-
-- **Render Documentation**: https://render.com/docs/deploy-fastapi
-- **Railway Documentation**: https://docs.railway.app/deploy/deployments
-- **Vercel Documentation**: https://vercel.com/docs/frameworks/nextjs
-- **Neon Documentation**: https://neon.tech/docs/introduction
-
----
-
-## 🆘 Need Help?
-
-If you encounter issues:
-1. Check deployment logs in Render/Railway/Vercel dashboard
-2. Verify all environment variables are set correctly
-3. Test backend API directly using `/docs` endpoint
-4. Check browser console for frontend errors
-
----
-
-**Last Updated**: 2026-01-08
-**Project**: Todo Manager - Phase II Web Application
+For detailed troubleshooting and advanced configuration, see the full documentation.
