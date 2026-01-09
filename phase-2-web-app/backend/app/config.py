@@ -9,6 +9,7 @@ Environment variables:
 """
 
 from pydantic_settings import BaseSettings
+from pydantic import ConfigDict
 
 
 class Settings(BaseSettings):
@@ -20,7 +21,7 @@ class Settings(BaseSettings):
     # Authentication
     jwt_secret: str = "your-secret-key-change-in-production"
     better_auth_secret: str = "your-secret-key-change-in-production"
-    algorithm: str = "HS256"
+    jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 10080  # 7 days
 
     # CORS (comma-separated string)
@@ -30,9 +31,11 @@ class Settings(BaseSettings):
     api_prefix: str = "/api"
     debug: bool = True
 
-    class Config:
-        env_file = ".env"
-        case_sensitive = False
+    model_config = ConfigDict(
+        env_file=".env",
+        case_sensitive=False,
+        extra="ignore"  # Ignore extra fields
+    )
 
 
 # Global settings instance

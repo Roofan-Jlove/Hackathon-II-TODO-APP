@@ -239,7 +239,7 @@ async def test_jwt_token_contains_user_id(client: AsyncClient, test_db, test_use
     token = response.json()["access_token"]
 
     # Decode token (without verification for test)
-    payload = jwt.decode(token, settings.better_auth_secret, algorithms=[settings.algorithm])
+    payload = jwt.decode(token, settings.better_auth_secret, algorithms=[settings.jwt_algorithm])
 
     assert "sub" in payload
     assert payload["sub"] == test_user["id"]
