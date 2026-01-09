@@ -1,15 +1,13 @@
 # Deployment Guide - Phase II Web Application
 
-This guide provides step-by-step instructions for deploying the Todo Manager web application to production.
+This guide provides step-by-step instructions for deploying the Todo Manager backend to Railway.
 
 ## Table of Contents
 
 1. [Prerequisites](#prerequisites)
 2. [Backend Deployment (Railway)](#backend-deployment-railway)
-3. [Frontend Deployment (Vercel)](#frontend-deployment-vercel)
-4. [Post-Deployment Configuration](#post-deployment-configuration)
-5. [Verification & Testing](#verification--testing)
-6. [Troubleshooting](#troubleshooting)
+3. [Verification & Testing](#verification--testing)
+4. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -20,7 +18,6 @@ This guide provides step-by-step instructions for deploying the Todo Manager web
 1. **GitHub Account** - For repository hosting
 2. **Neon Account** - For PostgreSQL database ([neon.tech](https://neon.tech))
 3. **Railway Account** - For backend hosting ([railway.app](https://railway.app))
-4. **Vercel Account** - For frontend hosting ([vercel.com](https://vercel.com))
 
 ### Required Tools
 
@@ -102,7 +99,7 @@ openssl rand -hex 32
    JWT_ALGORITHM=HS256
    \`\`\`
 
-   **Note**: We'll update \`CORS_ORIGINS\` after deploying the frontend.
+   **Note**: Update \`CORS_ORIGINS\` with your frontend domain when deploying frontend.
 
 5. **Deploy**
    - Click "Deploy"
@@ -120,63 +117,6 @@ openssl rand -hex 32
 
 ---
 
-## Frontend Deployment (Vercel)
-
-### Step 1: Deploy to Vercel
-
-1. **Create Vercel Account**
-   - Go to [vercel.com](https://vercel.com)
-   - Sign up with GitHub
-
-2. **Import Project**
-   - Click "Add New" → "Project"
-   - Import your repository
-   - Framework Preset: **Next.js** (auto-detected)
-
-3. **Configure Build Settings**
-   - Root Directory: \`Phase-2-Web-App/frontend\`
-   - Framework: Next.js
-   - Build Command: \`npm run build\`
-   - Node.js Version: 18.x
-
-4. **Set Environment Variables**
-
-   Click "Environment Variables" and add:
-
-   \`\`\`bash
-   NEXT_PUBLIC_API_URL=https://your-backend-url.railway.app
-   BETTER_AUTH_SECRET=your-same-secret-from-railway
-   BETTER_AUTH_URL=https://your-frontend-url.vercel.app
-   NODE_ENV=production
-   \`\`\`
-
-5. **Deploy**
-   - Click "Deploy"
-   - Wait for deployment (2-3 minutes)
-
-6. **Get Frontend URL**
-   - Once deployed, Vercel provides a URL
-   - **Save this URL**
-
----
-
-## Post-Deployment Configuration
-
-### Step 1: Update Backend CORS
-
-1. Go to Railway → Your service → Variables
-2. Update \`CORS_ORIGINS\`:
-   \`\`\`bash
-   CORS_ORIGINS=https://your-actual-frontend.vercel.app
-   \`\`\`
-
-### Step 2: Update Frontend BETTER_AUTH_URL
-
-1. Go to Vercel → Settings → Environment Variables
-2. Update \`BETTER_AUTH_URL\` with your actual Vercel URL
-
----
-
 ## Verification & Testing
 
 ### Test Backend API
@@ -186,12 +126,15 @@ curl https://your-backend.railway.app/
 # Should return: {"status":"ok","message":"Todo API is running"}
 \`\`\`
 
-### Test Frontend
+### Test API Endpoints
 
-1. Visit your Vercel URL
-2. Sign up for a new account
-3. Create a test task
-4. Verify everything works
+\`\`\`bash
+# Test health endpoint
+curl https://your-backend.railway.app/
+
+# Test docs (Swagger UI)
+# Visit: https://your-backend.railway.app/docs
+\`\`\`
 
 ---
 
@@ -199,17 +142,13 @@ curl https://your-backend.railway.app/
 
 ### Backend Issues
 
-**CORS errors**: Verify \`CORS_ORIGINS\` includes your Vercel URL
+**CORS errors**: Verify \`CORS_ORIGINS\` includes your frontend domain
 
 **Database connection fails**: Check connection string uses \`postgresql+asyncpg://\` and \`?sslmode=require\`
 
-**500 errors**: Check Railway logs
+**500 errors**: Check Railway logs in the Railway dashboard
 
-### Frontend Issues
-
-**API calls fail**: Verify \`NEXT_PUBLIC_API_URL\` is correct
-
-**Auth fails**: Verify \`BETTER_AUTH_SECRET\` matches backend
+**Environment variables**: Verify all required environment variables are set correctly
 
 ---
 
