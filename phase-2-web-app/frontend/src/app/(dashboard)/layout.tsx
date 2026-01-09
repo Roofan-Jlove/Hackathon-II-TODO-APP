@@ -14,6 +14,9 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { isAuthenticated } from "@/lib/auth";
 
+// Force dynamic rendering for all dashboard pages
+export const dynamic = 'force-dynamic';
+
 export default function DashboardLayout({
   children,
 }: {

@@ -12,7 +12,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { getUser } from "@/lib/auth";
-import { User as UserIcon, Mail, Lock, Camera } from "lucide-react";
+import { User as UserIcon, Lock, Camera } from "lucide-react";
 import Input from "@/components/ui/Input";
 import Button from "@/components/ui/Button";
 import KanbanNavbar from "@/components/KanbanNavbar";

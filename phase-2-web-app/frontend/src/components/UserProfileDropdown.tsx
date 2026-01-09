@@ -12,7 +12,7 @@
  */
 
 import { useState, useRef, useEffect } from "react";
-import { User, Users, LogOut, ChevronDown } from "lucide-react";
+import { User, Users, LogOut } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { logout } from "@/lib/auth";
 

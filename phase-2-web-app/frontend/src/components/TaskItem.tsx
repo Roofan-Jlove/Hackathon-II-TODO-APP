@@ -64,8 +64,8 @@ function formatDueDate(dueDate: string | null): string {
 
 export interface TaskItemProps {
   task: Task;
-  onToggleComplete: (taskId: number) => void;
-  onDelete: (taskId: number) => void;
+  onToggleComplete: (taskId: string) => void;
+  onDelete: (taskId: string) => void;
 }
 
 export default function TaskItem({

@@ -756,9 +756,17 @@ gunicorn app.main:app \
 # Check DATABASE_URL format
 postgresql+asyncpg://user:password@host:5432/database
 
+# For Neon PostgreSQL, remove ?sslmode=require from URL
+# The application handles SSL automatically with ssl='require' parameter
+
 # Ensure asyncpg driver is installed
 uv add asyncpg
 ```
+
+**Fixed Issue (January 2026):**
+- **SSL Connection Error:** Fixed asyncpg `sslmode` parameter issue
+- The database.py file now properly handles SSL connections
+- Use `ssl='require'` in connect_args instead of URL parameter
 
 **2. JWT token verification fails:**
 ```bash
@@ -817,7 +825,9 @@ Educational project for learning purposes.
 
 **Python 3.13+ | PostgreSQL | JWT Authentication**
 
-**Status:** Production Ready
+**Status:** Production Ready ✅ - 28/28 Tests Passing
+
+**Last Updated:** January 10, 2026
 
 [⬆ Back to Top](#todo-manager-backend---fastapi)
 

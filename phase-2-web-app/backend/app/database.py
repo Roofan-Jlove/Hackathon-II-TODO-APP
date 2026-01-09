@@ -16,13 +16,22 @@ async_database_url = settings.database_url.replace(
     "postgresql://", "postgresql+asyncpg://"
 )
 
+# Remove sslmode from URL if present (asyncpg uses ssl parameter instead)
+if "?sslmode=" in async_database_url:
+    base_url = async_database_url.split("?")[0]
+    async_database_url = base_url
+
 # Create async engine
 # Disable prepared statement caching to avoid schema change issues
+# Use ssl='require' for Neon PostgreSQL connections
 engine = create_async_engine(
     async_database_url,
     echo=settings.debug,
     future=True,
-    connect_args={"prepared_statement_cache_size": 0},
+    connect_args={
+        "prepared_statement_cache_size": 0,
+        "ssl": "require"
+    },
 )
 
 # Create async session factory

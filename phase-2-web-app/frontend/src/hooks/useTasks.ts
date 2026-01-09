@@ -201,14 +201,14 @@ export function useToggleTask(userId: string, filter?: TaskStatus) {
     },
 
     // On error, rollback to previous value
-    onError: (err, taskId, context) => {
+    onError: (_err, _taskId, context) => {
       if (context) {
         queryClient.setQueryData(context.queryKey, context.previousTasks);
       }
     },
 
     // Always refetch after error or success to ensure sync
-    onSettled: (data, error, taskId, context) => {
+    onSettled: (_data, _error, _taskId, context) => {
       if (context) {
         queryClient.invalidateQueries({ queryKey: context.queryKey });
       }

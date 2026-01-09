@@ -212,7 +212,7 @@ export default function TasksPage() {
   }
 
   // Handle add task
-  function handleAddTask(status: KanbanStatus) {
+  function handleAddTask(_status: KanbanStatus) {
     setIsCreateModalOpen(true);
   }
 

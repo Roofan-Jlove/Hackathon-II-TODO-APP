@@ -12,16 +12,14 @@
  */
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Button from "@/components/ui/Button";
 import CreateTaskModal from "@/components/CreateTaskModal";
 import UserProfileDropdown from "@/components/UserProfileDropdown";
-import { getUser, logout } from "@/lib/auth";
+import { getUser } from "@/lib/auth";
 import type { User } from "@/lib/types";
 
 export default function Header() {
-  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 

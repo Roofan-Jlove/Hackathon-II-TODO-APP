@@ -14,7 +14,6 @@
 
 import { useState, FormEvent, useRef, useEffect } from "react";
 import Input from "@/components/ui/Input";
-import Textarea from "@/components/ui/Textarea";
 import Button from "@/components/ui/Button";
 import PrioritySelect from "@/components/ui/PrioritySelect";
 import TagInput from "@/components/ui/TagInput";

@@ -10,7 +10,7 @@
 import Modal from "@/components/ui/Modal";
 import TaskForm from "@/components/TaskForm";
 import { useCreateTask } from "@/hooks/useTasks";
-import type { TaskCreate } from "@/lib/types";
+import type { TaskCreate, TaskUpdate } from "@/lib/types";
 
 interface CreateTaskModalProps {
   isOpen: boolean;
@@ -25,8 +25,8 @@ export default function CreateTaskModal({
 }: CreateTaskModalProps) {
   const createMutation = useCreateTask(userId);
 
-  function handleSubmit(data: TaskCreate) {
-    createMutation.mutate(data, {
+  function handleSubmit(data: TaskCreate | TaskUpdate) {
+    createMutation.mutate(data as TaskCreate, {
       onSuccess: () => {
         onClose(); // Close modal on success
         // React Query will auto-invalidate and refresh tasks
