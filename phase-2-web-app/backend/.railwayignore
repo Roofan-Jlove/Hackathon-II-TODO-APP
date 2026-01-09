@@ -1,0 +1,4 @@
+# Railway ignore file
+# Ignore everything outside backend directory
+../../*
+!../../Phase-2-Web-App/backend
