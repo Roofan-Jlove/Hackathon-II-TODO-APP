@@ -12,7 +12,7 @@ This mono repository contains all 5 phases of the Hackathon II TODO App project.
 HackathonII-TODO-APP/
 ├── phase-1-console-app/          # ✅ Phase 1: CLI Application (COMPLETE)
 ├── phase-2-web-app/              # ✅ Phase 2: Web Application (COMPLETE)
-├── phase-3-ai-chatbot/           # 📋 Phase 3: AI-Powered Chatbot (PLANNED)
+├── phase-3-ai-chatbot/           # 🚧 Phase 3: AI-Powered Chatbot (IN PROGRESS)
 ├── phase-4-kubernetes/           # 📋 Phase 4: Kubernetes Deployment (PLANNED)
 ├── phase-5-cloud-deployment/     # 📋 Phase 5: Cloud Deployment (PLANNED)
 └── README.md                     # This file
@@ -89,18 +89,28 @@ npm run dev
 
 ---
 
-### Phase 3: AI-Powered Chatbot 📋 PLANNED
+### Phase 3: AI-Powered Chatbot 🚧 IN PROGRESS
 
-**Technology:** TBD (LangChain, OpenAI API, etc.)
+**Technology:** Next.js 16+, FastAPI, OpenAI API, LangChain, PostgreSQL
 
-Conversational AI interface for TODO management:
-- Natural language task creation
-- Smart task suggestions
-- Context-aware responses
-- Voice input support
+AI-powered conversational interface for TODO management:
+- **Natural Language Processing** - Create and manage tasks through conversation
+- **Smart Task Suggestions** - AI-powered task recommendations and prioritization
+- **Context-Aware Responses** - Understanding user intent and task context
+- **Voice Input Support** - Speech-to-text task creation
+- **Built on Phase 2** - Extends web app with AI capabilities
+- **Chat Interface** - Modern conversational UI with message history
+- **AI Integration** - LangChain for orchestration, OpenAI for language models
 
 **Location:** `phase-3-ai-chatbot/`
-**Status:** Folder structure created
+**Documentation:** See `phase-3-ai-chatbot/README.md`
+**Status:** 🚧 Development in progress - Codebase initialized from Phase 2
+
+**Quick Start:**
+```bash
+cd phase-3-ai-chatbot
+# Setup instructions to be added during development
+```
 
 ---
 
@@ -193,7 +203,7 @@ This is a hackathon project. Each phase has its own development workflow and con
 |-------|--------|------------|---------------|
 | Phase 1: Console App | ✅ Complete | 100% | 56/56 tests |
 | Phase 2: Web App | ✅ Complete | 100% | 42/42 tests (28 backend + 14 frontend) |
-| Phase 3: AI Chatbot | 📋 Planned | 0% | - |
+| Phase 3: AI Chatbot | 🚧 In Progress | 10% | Setup phase |
 | Phase 4: Kubernetes | 📋 Planned | 0% | - |
 | Phase 5: Cloud Deploy | 📋 Planned | 0% | - |
 
@@ -201,7 +211,7 @@ This is a hackathon project. Each phase has its own development workflow and con
 
 - **Phase 1**: Completed - 2025-12-29 (56/56 tests passing)
 - **Phase 2**: Completed - 2026-01-10 (42/42 tests passing, Production Ready)
-- **Phase 3**: Planned
+- **Phase 3**: In Progress - Started 2026-01-11 (AI Chatbot Development)
 - **Phase 4**: Planned
 - **Phase 5**: Planned
 
@@ -218,6 +228,6 @@ MIT License - See individual phase directories for specific licensing informatio
 ---
 
 **Last Updated:** 2026-01-11
-**Current Phase:** Phase 3 (AI-Powered Chatbot) - Planning
-**Overall Progress:** 40% (2/5 phases complete)
+**Current Phase:** Phase 3 (AI-Powered Chatbot) - 🚧 In Development
+**Overall Progress:** 45% (2/5 phases complete, 1 in progress)
 **Total Tests:** 98/98 passing (56 Phase 1 + 42 Phase 2)
