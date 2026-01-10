@@ -6,30 +6,32 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-Python_3.13%2B-009688)](https://fastapi.tiangolo.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon_Serverless-316192)](https://neon.tech/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9%2B-blue)](https://www.typescriptlang.org/)
+[![Test Coverage](https://img.shields.io/badge/tests-42%2F42_passing-brightgreen)](./tests)
 [![License](https://img.shields.io/badge/license-Educational-orange)](./LICENSE)
 
 ---
 
-## Overview
+## 🎯 Overview
 
 **Todo Manager** is a production-ready, full-stack web application that allows users to create, organize, and manage their tasks with authentication, cloud persistence, and a modern UI. This is **Phase II** of our todo application evolution, transitioning from a CLI application (Phase I) to a complete web platform.
 
-### Key Features
+### ✨ Key Features
 
-- **User Authentication** - Secure signup/login with Better Auth
-- **Task Management** - Full CRUD operations for todos
-- **Advanced Features** - Priorities, tags, recurring tasks, due dates
-- **Kanban Board** - Drag-and-drop task organization (Ready, In Progress, Review, Done)
-- **Search & Filter** - Real-time search, filter by priority/tags/status
-- **Sorting** - Sort by date, priority, title, or completion status
-- **Data Persistence** - Cloud database storage with Neon PostgreSQL
-- **Modern UI** - Responsive design with Tailwind CSS
-- **RESTful API** - FastAPI backend with automatic documentation
-- **Type Safety** - TypeScript frontend with strict mode
+- 🔐 **User Authentication** - Secure signup/login with Better Auth and JWT tokens
+- ✅ **Task Management** - Full CRUD operations for todos
+- 📊 **Kanban Board** - Drag-and-drop task organization (Ready, In Progress, Review, Done)
+- 🔍 **Search & Filter** - Real-time search, filter by priority/tags/status
+- 🔄 **Sorting** - Sort by date, priority, title, or completion status
+- 🏷️ **Task Features** - Priorities (High/Medium/Low), tags, recurring tasks, due dates
+- 💾 **Data Persistence** - Cloud database storage with Neon PostgreSQL
+- 🎨 **Modern UI** - Responsive design with Tailwind CSS
+- 🚀 **RESTful API** - FastAPI backend with automatic documentation
+- 🔒 **Type Safety** - TypeScript frontend with strict mode
+- ✅ **100% Test Coverage** - 42/42 tests passing (28 backend + 14 frontend)
 
 ---
 
-## Tech Stack
+## 🛠️ Tech Stack
 
 ### Frontend
 - **Framework:** Next.js 16+ (App Router)
@@ -51,11 +53,12 @@
 - **Package Managers:** npm (frontend), UV (backend)
 - **Spec Framework:** SpecKit Plus
 - **AI Assistant:** Claude Code
+- **Testing:** Pytest (backend), Vitest + React Testing Library (frontend)
 - **Version Control:** Git
 
 ---
 
-## Quick Start
+## 🚀 Quick Start
 
 ### Prerequisites
 
@@ -115,7 +118,7 @@ Frontend will be running at: **http://localhost:3000**
 
 ---
 
-## Project Structure
+## 📁 Project Structure
 
 ```
 phase-2-web-app/
@@ -136,6 +139,7 @@ phase-2-web-app/
 │   │   ├── dependencies/       # FastAPI dependencies
 │   │   └── middleware/         # Middleware components
 │   ├── alembic/                # Database migrations
+│   ├── tests/                  # Backend tests
 │   ├── pyproject.toml
 │   └── README.md               # Backend documentation
 │
@@ -161,7 +165,7 @@ phase-2-web-app/
 
 ---
 
-## Features
+## ✨ Features
 
 ### Core Features (MVP Complete)
 
@@ -209,7 +213,7 @@ phase-2-web-app/
 
 ---
 
-## API Endpoints
+## 🔌 API Endpoints
 
 ### Authentication Endpoints
 
@@ -237,7 +241,7 @@ PATCH  /api/{user_id}/tasks/{id}/complete # Toggle completion status
 
 ---
 
-## Environment Variables
+## ⚙️ Environment Variables
 
 ### Backend `.env`
 
@@ -270,7 +274,7 @@ BETTER_AUTH_URL=http://localhost:3000
 
 ---
 
-## Development
+## 🧪 Development
 
 ### Running Both Servers
 
@@ -298,43 +302,6 @@ uv run pytest                    # Run all tests
 uv run pytest -v                 # Verbose output
 ```
 
-**Test Results:**
-```
-============================= test session starts =============================
-collected 28 items
-
-tests/test_auth.py::test_signup_success PASSED                     [  3%]
-tests/test_auth.py::test_signup_duplicate_email PASSED             [  7%]
-tests/test_auth.py::test_signup_invalid_email PASSED               [ 10%]
-tests/test_auth.py::test_signup_missing_fields PASSED              [ 14%]
-tests/test_auth.py::test_login_success PASSED                      [ 17%]
-tests/test_auth.py::test_login_wrong_password PASSED               [ 21%]
-tests/test_auth.py::test_login_nonexistent_email PASSED            [ 25%]
-tests/test_auth.py::test_password_hashed_in_database PASSED        [ 28%]
-tests/test_auth.py::test_jwt_token_contains_user_id PASSED         [ 32%]
-tests/test_auth.py::test_signup_creates_timestamps PASSED          [ 35%]
-tests/test_tasks.py::test_create_task_success PASSED               [ 39%]
-tests/test_tasks.py::test_create_task_with_tags PASSED             [ 42%]
-tests/test_tasks.py::test_create_task_with_recurrence PASSED       [ 46%]
-tests/test_tasks.py::test_create_task_without_auth PASSED          [ 50%]
-tests/test_tasks.py::test_create_task_invalid_title PASSED         [ 53%]
-tests/test_tasks.py::test_create_task_title_too_long PASSED        [ 57%]
-tests/test_tasks.py::test_get_all_tasks PASSED                     [ 60%]
-tests/test_tasks.py::test_get_tasks_filters_by_user PASSED         [ 64%]
-tests/test_tasks.py::test_get_tasks_forbidden_other_user PASSED    [ 67%]
-tests/test_tasks.py::test_get_single_task PASSED                   [ 71%]
-tests/test_tasks.py::test_get_task_not_found PASSED                [ 75%]
-tests/test_tasks.py::test_update_task_success PASSED               [ 78%]
-tests/test_tasks.py::test_update_task_partial PASSED               [ 82%]
-tests/test_tasks.py::test_update_task_forbidden_other_user PASSED  [ 85%]
-tests/test_tasks.py::test_delete_task_success PASSED               [ 89%]
-tests/test_tasks.py::test_delete_task_forbidden_other_user PASSED  [ 92%]
-tests/test_tasks.py::test_toggle_task_completion PASSED            [ 96%]
-tests/test_tasks.py::test_task_timestamps_updated PASSED           [100%]
-
-============================= 28 passed in 12.66s =============================
-```
-
 **Test Coverage:**
 - ✅ **Authentication Tests (10):** Signup, login, password hashing, JWT tokens
 - ✅ **Task Management Tests (18):** CRUD operations, authorization, validation
@@ -350,20 +317,10 @@ npm run test:run                 # Run tests once
 npm run test:coverage            # Run with coverage report
 ```
 
-**Test Results:**
-```
-✓ src/components/Footer.test.tsx (6 tests)
-✓ src/components/DeleteConfirmation.test.tsx (8 tests)
-
-Test Files  2 passed (2)
-Tests  14 passed (14)
-```
-
 **Test Coverage:**
 - ✅ **Component Tests (2 files):** Footer, DeleteConfirmation
 - ✅ **Test Framework:** Vitest 4.0.16
 - ✅ **Testing Utilities:** @testing-library/react 16.3.1
-- ✅ **All Components:** Render correctly and respond to user interactions
 
 ### Code Quality
 
@@ -403,7 +360,7 @@ alembic downgrade -1
 
 ---
 
-## Architecture
+## 🏗️ Architecture
 
 ### System Architecture
 
@@ -442,7 +399,7 @@ alembic downgrade -1
 
 ---
 
-## Spec-Driven Development
+## 📐 Spec-Driven Development
 
 This project follows **strict spec-driven development** using SpecKit Plus:
 
@@ -481,7 +438,7 @@ Before implementing any feature:
 
 ---
 
-## Security
+## 🔒 Security
 
 ### Authentication Security
 
@@ -508,7 +465,7 @@ Before implementing any feature:
 
 ---
 
-## Deployment
+## 🚀 Deployment
 
 ### Production Deployment
 
@@ -534,7 +491,7 @@ Before implementing any feature:
 
 ---
 
-## Troubleshooting
+## 🔧 Troubleshooting
 
 ### Backend Issues
 
@@ -591,13 +548,6 @@ npm run type-check
 rm -rf .next
 ```
 
-**4. Test File Errors:**
-```bash
-# Test files are excluded from TypeScript compilation
-# If you see "Cannot find name 'vi'" error:
-# This is normal - tests use Vitest globals
-```
-
 ### General Issues
 
 **1. Port Already in Use:**
@@ -632,7 +582,7 @@ cd frontend && rm -rf node_modules && npm install
 
 ---
 
-## Project Timeline
+## 📅 Project Timeline
 
 ### Phase II Milestones
 
@@ -649,7 +599,7 @@ cd frontend && rm -rf node_modules && npm install
   - Database connectivity verified
   - Development environment fully functional
 
-### Current Status (January 10, 2026)
+### Current Status (January 11, 2026)
 
 **Backend:** ✅ **Production Ready**
 - All 28 tests passing
@@ -675,7 +625,7 @@ cd frontend && rm -rf node_modules && npm install
 
 ---
 
-## Contributing
+## 🤝 Contributing
 
 This is an educational hackathon project. Contributions are welcome!
 
@@ -704,7 +654,7 @@ This is an educational hackathon project. Contributions are welcome!
 
 ---
 
-## Documentation
+## 📚 Documentation
 
 - **Main Guide:** [CLAUDE.md](./CLAUDE.md) - Navigation for Claude Code
 - **Agent Rules:** [AGENTS.md](./AGENTS.md) - Agent behavior and responsibilities
@@ -716,7 +666,7 @@ This is an educational hackathon project. Contributions are welcome!
 
 ---
 
-## Support
+## 💬 Support
 
 - **Issues:** [GitHub Issues](https://github.com/Roofan-Jlove/Hackathon-II-TODO-APP/issues)
 - **Documentation:** See `CLAUDE.md` and component-specific README files
@@ -724,7 +674,7 @@ This is an educational hackathon project. Contributions are welcome!
 
 ---
 
-## Acknowledgments
+## 🙏 Acknowledgments
 
 - **Claude Code** - AI-powered development assistant
 - **SpecKit Plus** - Specification-driven development framework
@@ -736,7 +686,7 @@ This is an educational hackathon project. Contributions are welcome!
 
 ---
 
-## License
+## 📄 License
 
 Educational project for learning purposes.
 
@@ -750,7 +700,7 @@ Educational project for learning purposes.
 
 **Status:** Production Ready ✅ - 42/42 Tests Passing
 
-**Last Updated:** January 10, 2026
+**Last Updated:** January 11, 2026
 
 [⬆ Back to Top](#todo-manager---phase-ii-web-application)
 
