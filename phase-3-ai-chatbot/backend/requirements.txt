@@ -1,5 +1,5 @@
 # Web Framework
-fastapi==0.109.0
+fastapi==0.128.0
 uvicorn[standard]==0.27.0
 
 # Database
@@ -25,3 +25,7 @@ httpx==0.26.0
 # Development
 ruff==0.1.15
 mypy==1.8.0
+
+# Phase III - AI Chatbot
+openai==1.54.0
+mcp==1.1.2

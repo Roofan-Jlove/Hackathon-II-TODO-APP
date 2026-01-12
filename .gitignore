@@ -99,3 +99,4 @@ htmlcov/
 *.temp
 temp/
 tmp/
+tmpclaude-*
