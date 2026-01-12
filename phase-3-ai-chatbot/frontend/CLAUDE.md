@@ -1,6 +1,6 @@
 # Claude Code Guide - Next.js Frontend
 
-This document provides **Next.js-specific guidance** for Claude Code when working on the frontend of the Phase II Web Application.
+This document provides **Next.js-specific guidance** for Claude Code when working on the frontend of the Phase II-III Web Application (including AI Chatbot).
 
 **IMPORTANT:** Always read the main navigation guide first: `@../CLAUDE.md`
 
@@ -10,12 +10,16 @@ This document provides **Next.js-specific guidance** for Claude Code when workin
 
 ### Technology Stack
 
+**Phase II:**
 - **Next.js 16+** (App Router)
 - **TypeScript** (strict mode enabled)
 - **Tailwind CSS** (utility-first styling)
 - **Better Auth** (authentication & authorization)
 - **React Query** (server state management)
 - **Zod** (runtime validation)
+
+**Phase III (AI Chatbot):**
+- **OpenAI ChatKit** (Pre-built AI chat interface components)
 
 ### Version Requirements
 
@@ -154,6 +158,8 @@ frontend/
 │   │   │   │   │   └── page.tsx     # Task detail page
 │   │   │   │   └── new/
 │   │   │   │       └── page.tsx     # Create task page
+│   │   │   ├── chat/
+│   │   │   │   └── page.tsx         # AI chat interface (Phase III)
 │   │   │   └── layout.tsx           # Dashboard layout
 │   │   ├── api/                      # API routes (if needed)
 │   │   │   └── auth/                # Better Auth routes
@@ -575,6 +581,9 @@ export function Header() {
               <>
                 <Link href="/tasks" className="text-gray-700 hover:text-gray-900">
                   Tasks
+                </Link>
+                <Link href="/chat" className="text-gray-700 hover:text-gray-900">
+                  Chat
                 </Link>
                 <span className="text-gray-600">Hello, {user?.name}</span>
                 <Button onClick={handleLogout} variant="outline">
@@ -1149,8 +1158,699 @@ npm run type-check       # Check TypeScript types
 
 ---
 
-**Project:** Phase II - Full-Stack Web Application
-**Frontend Stack:** Next.js 16+ (App Router) + TypeScript + Tailwind CSS
-**Authentication:** Better Auth
-**Last Updated:** 2025-12-31
-**Status:** Ready for Development
+## 13. PHASE III: CHATKIT INTEGRATION
+
+### Overview
+
+Phase III adds an AI-powered chatbot using OpenAI ChatKit for the chat interface. The chatbot allows users to manage tasks through natural language conversations.
+
+### Installation
+
+```bash
+# Install OpenAI ChatKit
+npm install @openai/chatkit
+
+# ChatKit requires React 18+
+npm install react@^18.0.0 react-dom@^18.0.0
+```
+
+### Usage in Chat Page
+
+ChatKit components are used in the `/app/chat/page.tsx` file as a **client component** (requires `'use client'` directive).
+
+```tsx
+// app/chat/page.tsx
+'use client'
+
+import { ChatKit } from '@openai/chatkit'
+import { useState } from 'react'
+
+export default function ChatPage() {
+  const [conversationId, setConversationId] = useState<number | null>(null)
+
+  return (
+    <div className="h-screen">
+      <ChatKit
+        apiEndpoint="/api/chat/message"
+        conversationId={conversationId}
+        onConversationChange={setConversationId}
+      />
+    </div>
+  )
+}
+```
+
+### Integration with Backend
+
+ChatKit automatically:
+- Sends user messages to the backend chat endpoint
+- Displays AI responses in real-time
+- Manages conversation history
+- Handles loading states during AI processing
+- Includes JWT cookies automatically (credentials: 'include')
+
+---
+
+## 14. CHAT PAGE STRUCTURE
+
+### File Location
+
+```
+app/
+└── chat/
+    └── page.tsx  # AI chat interface
+```
+
+### Component Responsibilities
+
+The chat page (`app/chat/page.tsx`) is responsible for:
+
+1. **Rendering OpenAI ChatKit Component**
+   - Import and display ChatKit from @openai/chatkit
+   - Configure with backend endpoint
+
+2. **Sending Messages to Backend**
+   - Messages automatically sent to POST /api/chat/message
+   - Includes conversation_id in requests
+
+3. **Tracking Conversation State**
+   - Store conversation_id in component state
+   - Pass to ChatKit for conversation continuity
+
+4. **Handling Loading States**
+   - Show loading indicator while waiting for AI response
+   - ChatKit handles this automatically
+
+5. **Authentication (JWT Cookies)**
+   - Reuses existing JWT authentication from Phase II
+   - Cookies sent automatically with fetch credentials: 'include'
+
+6. **Displaying Chat History**
+   - ChatKit fetches and displays conversation history
+   - Automatically scrolls to latest message
+
+### Example Implementation
+
+```tsx
+// app/chat/page.tsx
+'use client'
+
+import { ChatKit } from '@openai/chatkit'
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { useAuth } from '@/lib/auth'
+
+export default function ChatPage() {
+  const router = useRouter()
+  const { isAuthenticated, isLoading } = useAuth()
+  const [conversationId, setConversationId] = useState<number | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  // Redirect if not authenticated
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.push('/login')
+    }
+  }, [isAuthenticated, isLoading, router])
+
+  // Handle chat errors
+  const handleError = (err: Error) => {
+    if (err.message.includes('401')) {
+      // Unauthorized - redirect to login
+      router.push('/login')
+    } else {
+      setError('Failed to send message. Please try again.')
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <p>Loading...</p>
+      </div>
+    )
+  }
+
+  if (!isAuthenticated) {
+    return null // Will redirect
+  }
+
+  return (
+    <div className="h-screen flex flex-col">
+      <div className="bg-white shadow px-4 py-3">
+        <h1 className="text-xl font-semibold">AI Task Assistant</h1>
+        <p className="text-sm text-gray-600">
+          Ask me to create, update, or manage your tasks
+        </p>
+      </div>
+
+      {error && (
+        <div className="bg-red-50 border-l-4 border-red-400 p-4">
+          <p className="text-sm text-red-700">{error}</p>
+        </div>
+      )}
+
+      <div className="flex-1 overflow-hidden">
+        <ChatKit
+          apiEndpoint="/api/chat/message"
+          conversationId={conversationId}
+          onConversationChange={setConversationId}
+          onError={handleError}
+          placeholder="Type a message... (e.g., 'Create a task to buy groceries')"
+        />
+      </div>
+    </div>
+  )
+}
+```
+
+---
+
+## 15. CHAT API INTEGRATION
+
+### Backend Endpoint
+
+**Endpoint:** `POST /api/chat/message`
+
+**Note:** The actual backend endpoint URL is `http://localhost:8000/api/chat/message` (FastAPI backend). The frontend API client should route `/api/chat/message` to this backend URL.
+
+### Request Format
+
+```typescript
+interface ChatMessageRequest {
+  conversation_id?: number  // Optional for first message
+  message: string           // User's message content
+}
+```
+
+**Example Request:**
+```json
+{
+  "conversation_id": 123,
+  "message": "Create a high priority task for client presentation"
+}
+```
+
+### Response Format
+
+```typescript
+interface ChatMessageResponse {
+  conversation_id: number   // ID of the conversation
+  response: string          // AI assistant's response
+  tool_calls?: Array<{      // Optional: tools called by AI
+    tool: string            // Tool name (e.g., "add_task")
+    result: any             // Tool execution result
+  }>
+}
+```
+
+**Example Response:**
+```json
+{
+  "conversation_id": 123,
+  "response": "I've created a high priority task titled 'Client presentation'. Is there anything else you'd like to add?",
+  "tool_calls": [
+    {
+      "tool": "add_task",
+      "result": {
+        "id": 456,
+        "title": "Client presentation",
+        "priority": "high"
+      }
+    }
+  ]
+}
+```
+
+### Integration Pattern
+
+#### 1. Using Centralized API Client
+
+Add chat methods to the API client:
+
+```typescript
+// lib/api.ts
+class ApiClient {
+  // ... existing methods ...
+
+  // Chat API
+  async sendChatMessage(
+    message: string,
+    conversationId?: number
+  ): Promise<ChatMessageResponse> {
+    return this.request<ChatMessageResponse>('/api/chat/message', {
+      method: 'POST',
+      body: JSON.stringify({
+        message,
+        conversation_id: conversationId,
+      }),
+    })
+  }
+
+  async getChatHistory(conversationId: number): Promise<Message[]> {
+    return this.request<Message[]>(`/api/chat/conversations/${conversationId}/messages`)
+  }
+
+  async listConversations(): Promise<Conversation[]> {
+    return this.request<Conversation[]>('/api/chat/conversations')
+  }
+}
+
+// Types
+export interface ChatMessageResponse {
+  conversation_id: number
+  response: string
+  tool_calls?: Array<{
+    tool: string
+    result: any
+  }>
+}
+
+export interface Message {
+  id: number
+  role: 'user' | 'assistant' | 'system'
+  content: string
+  created_at: string
+}
+
+export interface Conversation {
+  id: number
+  title: string
+  created_at: string
+  updated_at: string
+  is_active: boolean
+}
+```
+
+#### 2. Automatic Authentication
+
+The API client automatically includes JWT cookies with every request:
+
+```typescript
+private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+  const url = `${this.baseUrl}${endpoint}`
+
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      'Content-Type': 'application/json',
+      ...options.headers,
+    },
+    credentials: 'include', // ✅ Sends JWT cookie automatically
+  })
+
+  if (response.status === 401) {
+    // Unauthorized - redirect to login
+    window.location.href = '/login'
+    throw new Error('Unauthorized')
+  }
+
+  // ... rest of error handling
+}
+```
+
+#### 3. Tracking Conversation State
+
+```tsx
+'use client'
+import { useState } from 'react'
+import { api } from '@/lib/api'
+
+export function ChatInterface() {
+  const [conversationId, setConversationId] = useState<number | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  const sendMessage = async (message: string) => {
+    try {
+      setLoading(true)
+      const response = await api.sendChatMessage(message, conversationId)
+
+      // Update conversation ID if this was the first message
+      if (!conversationId) {
+        setConversationId(response.conversation_id)
+      }
+
+      return response
+    } catch (error) {
+      console.error('Failed to send message:', error)
+      throw error
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div>
+      {loading && <div>Loading...</div>}
+      {/* Chat UI */}
+    </div>
+  )
+}
+```
+
+#### 4. Error Handling
+
+```tsx
+const sendMessage = async (message: string) => {
+  try {
+    const response = await api.sendChatMessage(message, conversationId)
+    return response
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message.includes('401') || error.message === 'Unauthorized') {
+        // Redirect to login (handled by API client)
+        return
+      } else if (error.message.includes('500')) {
+        // Server error
+        setError('AI service is currently unavailable. Please try again later.')
+      } else {
+        // Other errors
+        setError('Failed to send message. Please try again.')
+      }
+    }
+  }
+}
+```
+
+---
+
+## 16. CHATKIT CONFIGURATION
+
+### Environment Variables
+
+ChatKit requires the following environment variable:
+
+```bash
+# .env.local
+NEXT_PUBLIC_OPENAI_DOMAIN_KEY=your_domain_key_here
+```
+
+### OpenAI Platform Setup
+
+1. **Create Domain Key:**
+   - Go to OpenAI Platform (https://platform.openai.com)
+   - Navigate to API Keys section
+   - Create a new domain-restricted key for your frontend domain
+   - Add `localhost:3000` (development) and your production domain
+
+2. **Domain Allowlist:**
+   - ChatKit requires domain verification
+   - Add allowed domains in OpenAI dashboard
+   - Development: `http://localhost:3000`
+   - Production: `https://yourdomain.com`
+
+### ChatKit Component Configuration
+
+```tsx
+import { ChatKit } from '@openai/chatkit'
+
+<ChatKit
+  // Required: Backend chat endpoint
+  apiEndpoint="/api/chat/message"
+
+  // Optional: Conversation ID for continuity
+  conversationId={conversationId}
+
+  // Optional: Callback when conversation ID changes
+  onConversationChange={(id) => setConversationId(id)}
+
+  // Optional: Error handler
+  onError={(error) => console.error('Chat error:', error)}
+
+  // Optional: Placeholder text
+  placeholder="Ask me anything about your tasks..."
+
+  // Optional: Theme customization
+  theme={{
+    primaryColor: '#3B82F6',
+    backgroundColor: '#FFFFFF',
+    fontFamily: 'Inter, sans-serif',
+  }}
+
+  // Optional: Additional headers
+  headers={{
+    'X-Custom-Header': 'value',
+  }}
+/>
+```
+
+### Styling ChatKit
+
+ChatKit uses its own internal styles, but you can customize with CSS:
+
+```tsx
+// Wrapper div with custom height
+<div className="h-[calc(100vh-64px)]">
+  <ChatKit apiEndpoint="/api/chat/message" />
+</div>
+```
+
+```css
+/* globals.css */
+/* Override ChatKit styles if needed */
+.chatkit-container {
+  --chatkit-primary: #3B82F6;
+  --chatkit-background: #FFFFFF;
+  --chatkit-text: #111827;
+}
+```
+
+---
+
+## 17. CHAT NAVIGATION
+
+### Adding Chat Link to Header
+
+Update the Header component to include a "Chat" navigation item when the user is logged in:
+
+```tsx
+// components/layout/Header.tsx
+'use client'
+
+import Link from 'next/link'
+import { useAuth } from '@/lib/auth'
+import { Button } from '@/components/ui/Button'
+import { api } from '@/lib/api'
+
+export function Header() {
+  const { user, isAuthenticated } = useAuth()
+
+  const handleLogout = async () => {
+    await api.logout()
+    window.location.href = '/login'
+  }
+
+  return (
+    <header className="bg-white shadow">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+        <div className="flex items-center justify-between">
+          <Link href="/" className="text-2xl font-bold text-gray-900">
+            Todo App
+          </Link>
+
+          <nav className="flex items-center gap-4">
+            {isAuthenticated ? (
+              <>
+                <Link href="/tasks" className="text-gray-700 hover:text-gray-900">
+                  Tasks
+                </Link>
+                {/* Phase III: Chat navigation */}
+                <Link href="/chat" className="text-gray-700 hover:text-gray-900">
+                  Chat
+                </Link>
+                <span className="text-gray-600">Hello, {user?.name}</span>
+                <Button onClick={handleLogout} variant="outline">
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <>
+                <Link href="/login">
+                  <Button variant="outline">Login</Button>
+                </Link>
+                <Link href="/signup">
+                  <Button>Sign Up</Button>
+                </Link>
+              </>
+            )}
+          </nav>
+        </div>
+      </div>
+    </header>
+  )
+}
+```
+
+### Navigation Behavior
+
+- **Chat link visible:** Only when user is authenticated
+- **Chat route:** `/chat` (protected route)
+- **Active state:** Use `usePathname()` to highlight active route
+
+```tsx
+'use client'
+import { usePathname } from 'next/navigation'
+
+export function Header() {
+  const pathname = usePathname()
+
+  return (
+    <nav>
+      <Link
+        href="/tasks"
+        className={pathname === '/tasks' ? 'text-blue-600 font-semibold' : 'text-gray-700'}
+      >
+        Tasks
+      </Link>
+      <Link
+        href="/chat"
+        className={pathname === '/chat' ? 'text-blue-600 font-semibold' : 'text-gray-700'}
+      >
+        Chat
+      </Link>
+    </nav>
+  )
+}
+```
+
+### Mobile Navigation
+
+For mobile views, include chat in the mobile menu:
+
+```tsx
+<div className="md:hidden">
+  <button onClick={() => setMenuOpen(!menuOpen)}>
+    Menu
+  </button>
+
+  {menuOpen && (
+    <div className="mt-2 space-y-2">
+      <Link href="/tasks">Tasks</Link>
+      <Link href="/chat">Chat</Link>
+    </div>
+  )}
+</div>
+```
+
+---
+
+## 18. COMPONENT GUIDELINES (PHASE III)
+
+### ChatPage Component
+
+**Location:** `app/chat/page.tsx`
+
+**Pattern:** Client component (`'use client'`)
+
+**Responsibilities:**
+- Render OpenAI ChatKit component
+- Manage conversation state (conversation_id)
+- Handle authentication (redirect if not logged in)
+- Display loading states
+- Handle errors (401, 500, network errors)
+
+**Example:**
+```tsx
+'use client'
+import { ChatKit } from '@openai/chatkit'
+import { useState } from 'react'
+
+export default function ChatPage() {
+  const [conversationId, setConversationId] = useState<number | null>(null)
+
+  return (
+    <div className="h-screen">
+      <ChatKit
+        apiEndpoint="/api/chat/message"
+        conversationId={conversationId}
+        onConversationChange={setConversationId}
+      />
+    </div>
+  )
+}
+```
+
+### Type Definitions for Chat
+
+```typescript
+// lib/types.ts
+
+// Chat message types
+export interface ChatMessage {
+  id: number
+  conversation_id: number
+  role: 'user' | 'assistant' | 'system'
+  content: string
+  created_at: string
+}
+
+export interface Conversation {
+  id: number
+  user_id: number
+  title: string
+  created_at: string
+  updated_at: string
+  is_active: boolean
+}
+
+export interface ChatMessageRequest {
+  conversation_id?: number
+  message: string
+}
+
+export interface ChatMessageResponse {
+  conversation_id: number
+  response: string
+  tool_calls?: Array<{
+    tool: string
+    result: any
+  }>
+}
+```
+
+---
+
+## 19. PHASE III QUALITY CHECKLIST
+
+Before submitting Phase III frontend code, verify:
+
+**ChatKit Integration:**
+- [ ] OpenAI ChatKit installed (`npm install @openai/chatkit`)
+- [ ] NEXT_PUBLIC_OPENAI_DOMAIN_KEY environment variable set
+- [ ] ChatKit component properly configured
+- [ ] Chat page is a client component (`'use client'`)
+
+**API Integration:**
+- [ ] Chat methods added to centralized API client
+- [ ] API calls use `credentials: 'include'` for JWT cookies
+- [ ] 401 errors redirect to login page
+- [ ] 500 errors show user-friendly message
+
+**State Management:**
+- [ ] conversation_id tracked in component state
+- [ ] conversation_id passed to ChatKit
+- [ ] conversation_id sent with API requests
+
+**Authentication:**
+- [ ] Chat page checks authentication status
+- [ ] Redirects to login if not authenticated
+- [ ] JWT cookie sent automatically with requests
+
+**UI/UX:**
+- [ ] Loading states displayed during AI processing
+- [ ] Error messages user-friendly and actionable
+- [ ] Chat UI responsive (mobile + desktop)
+- [ ] Chat navigation link visible when logged in
+
+**Types:**
+- [ ] Chat types defined in lib/types.ts
+- [ ] API methods properly typed
+- [ ] Component props properly typed
+
+---
+
+**Project:** Phase II-III - Full-Stack Web Application with AI Chatbot
+**Frontend Stack:** Next.js 16+ (App Router) + TypeScript + Tailwind CSS + OpenAI ChatKit
+**Authentication:** Better Auth (JWT cookies)
+**Last Updated:** 2026-01-12
+**Status:** Phase III - AI Chatbot Development
