@@ -1,9 +1,9 @@
-# Phase II Todo Application - Implementation Plan
+# Phase II-III Todo Application - Implementation Plan
 
 **Document Type:** Implementation Plan (HOW to build)
-**Phase:** II - Full-Stack Web Application
-**Version:** 1.0.0
-**Date:** 2026-01-01
+**Phase:** II-III - Full-Stack Web Application with AI Chatbot
+**Version:** 2.0.0
+**Date:** 2026-01-12
 **Status:** Ready for Implementation
 
 ---
@@ -106,6 +106,144 @@
 └─────────────────────────────────────────────────────────────┘
 ```
 
+---
+
+### Phase III: AI Chatbot Architecture Extension
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                         Browser                             │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │           Next.js Frontend (Vercel)                 │   │
+│  │  ┌─────────────────────────────────────────────┐   │   │
+│  │  │  Chat Page (NEW - Phase III)                │   │   │
+│  │  │  - app/chat/page.tsx                        │   │   │
+│  │  │  - OpenAI ChatKit components                │   │   │
+│  │  │  - Message history display                  │   │   │
+│  │  │  - Chat input with send button              │   │   │
+│  │  └─────────────────────────────────────────────┘   │   │
+│  │  ┌─────────────────────────────────────────────┐   │   │
+│  │  │  Chat API Client (/lib/chat-api.ts)         │   │   │
+│  │  │  - POST /api/chat/message                   │   │   │
+│  │  │  - JWT in httpOnly cookie                   │   │   │
+│  │  │  - Conversation state management            │   │   │
+│  │  └─────────────────────────────────────────────┘   │   │
+│  │                                                      │   │
+│  │  [Phase II Components remain unchanged]             │   │
+│  └────────────────┬────────────────────────────────────┘   │
+└───────────────────┼─────────────────────────────────────────┘
+                    │
+                    │ HTTPS + JWT in Cookie
+                    ▼
+┌─────────────────────────────────────────────────────────────┐
+│           FastAPI Backend (Railway/Render)                  │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  JWT Verification Middleware (Phase II - reused)    │   │
+│  └────────────────┬────────────────────────────────────┘   │
+│                   ▼                                         │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  Chat Endpoint (NEW - Phase III)                   │   │
+│  │  POST /api/chat/message                            │   │
+│  │  ┌────────────────────────────────────────────┐    │   │
+│  │  │ 1. Verify JWT & extract user_id            │    │   │
+│  │  │ 2. Get or create conversation              │    │   │
+│  │  │ 3. Fetch conversation history (20 msgs)    │    │   │
+│  │  │ 4. Store user message in database          │    │   │
+│  │  │ 5. Build message array for AI              │    │   │
+│  │  └────────────────────────────────────────────┘    │   │
+│  └────────────────┬────────────────────────────────────┘   │
+│                   ▼                                         │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  OpenAI Agent Processing (NEW - Phase III)         │   │
+│  │  ┌────────────────────────────────────────────┐    │   │
+│  │  │  OpenAI Agents SDK                         │    │   │
+│  │  │  - AsyncOpenAI client (GPT-4o/mini)       │    │   │
+│  │  │  - System prompt injection                 │    │   │
+│  │  │  - Tool calling orchestration              │    │   │
+│  │  │  - Multi-turn conversations (max 5)        │    │   │
+│  │  └────────────────────────────────────────────┘    │   │
+│  │                 ▼                                   │   │
+│  │  ┌────────────────────────────────────────────┐    │   │
+│  │  │  MCP Server (5 Tools)                      │    │   │
+│  │  │  - add_task(user_id, title, ...)          │    │   │
+│  │  │  - list_tasks(user_id, filters)           │    │   │
+│  │  │  - update_task(user_id, task_id, ...)     │    │   │
+│  │  │  - complete_task(user_id, task_id)        │    │   │
+│  │  │  - delete_task(user_id, task_id)          │    │   │
+│  │  │                                             │    │   │
+│  │  │  Stateless: ALL filter by user_id          │    │   │
+│  │  └────────────────────────────────────────────┘    │   │
+│  └────────────────┬────────────────────────────────────┘   │
+│                   ▼                                         │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  Conversation State Management (NEW - Phase III)   │   │
+│  │  - ConversationService (stateless)                 │   │
+│  │  - Store assistant response in database            │   │
+│  │  - Update conversation updated_at timestamp        │   │
+│  │  - Return response to client                       │   │
+│  └────────────────┬────────────────────────────────────┘   │
+│                   ▼                                         │
+│  │  [Phase II Task CRUD Endpoints remain unchanged]   │   │
+│  │                                                     │   │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  SQLModel ORM (Extended for Phase III)             │   │
+│  │  - models.py: Task, User (Phase II)                │   │
+│  │  - models.py: Conversation, Message (Phase III)    │   │
+│  └────────────────┬────────────────────────────────────┘   │
+└───────────────────┼─────────────────────────────────────────┘
+                    │
+                    │ asyncpg (PostgreSQL Wire Protocol)
+                    ▼
+┌─────────────────────────────────────────────────────────────┐
+│              Neon PostgreSQL (Cloud)                        │
+│  ┌─────────────────────────────────────────────────────┐   │
+│  │  Phase II Tables (unchanged):                       │   │
+│  │  - users                                            │   │
+│  │  - tasks                                            │   │
+│  │                                                     │   │
+│  │  Phase III Tables (NEW):                           │   │
+│  │  ┌──────────────────────────────────────────────┐  │   │
+│  │  │  conversations                               │  │   │
+│  │  │  - id (INTEGER PK AUTOINCREMENT)             │  │   │
+│  │  │  - user_id (VARCHAR FK → users.id)           │  │   │
+│  │  │  - title (VARCHAR 200)                       │  │   │
+│  │  │  - created_at (TIMESTAMP)                    │  │   │
+│  │  │  - updated_at (TIMESTAMP)                    │  │   │
+│  │  │  - is_active (BOOLEAN)                       │  │   │
+│  │  └──────────────────────────────────────────────┘  │   │
+│  │                                                     │   │
+│  │  ┌──────────────────────────────────────────────┐  │   │
+│  │  │  messages                                    │  │   │
+│  │  │  - id (INTEGER PK AUTOINCREMENT)             │  │   │
+│  │  │  - conversation_id (INTEGER FK → conv.id)    │  │   │
+│  │  │  - role (VARCHAR 20)  # user|assistant       │  │   │
+│  │  │  - content (TEXT)                            │  │   │
+│  │  │  - created_at (TIMESTAMP)                    │  │   │
+│  │  └──────────────────────────────────────────────┘  │   │
+│  │                                                     │   │
+│  │  Phase III Indexes (NEW):                          │   │
+│  │  - idx_conversations_user_updated                   │   │
+│  │  - idx_conversations_user_active                    │   │
+│  │  - idx_messages_conversation_created                │   │
+│  └─────────────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────────────┘
+
+
+                    ┌────────────────────────┐
+                    │   OpenAI API (Cloud)   │
+                    │  - GPT-4o / GPT-4o-mini│
+                    │  - Tool calling support│
+                    └────────────────────────┘
+                              ▲
+                              │ HTTPS
+                              │ (OpenAI API Key)
+                              │
+                    ┌─────────┴─────────┐
+                    │  FastAPI Backend  │
+                    │  OpenAI Agent SDK │
+                    └───────────────────┘
+```
+
 ### Data Flow
 
 **1. Authentication Flow:**
@@ -146,6 +284,123 @@ User → Page Load → GET /api/{user_id}/tasks?status=all
                         ↓
                 Render TaskList
 ```
+
+---
+
+**Phase III Data Flows:**
+
+**4. AI Chat Message Flow (Stateless):**
+```
+User types message → Chat Input (ChatKit)
+                        ↓
+                Send message to backend
+                        ↓
+        POST /api/chat/message
+        Body: {conversation_id?, message: "Add task to buy groceries"}
+        Cookie: JWT token
+                        ↓
+                JWT Middleware (verify user_id)
+                        ↓
+        ConversationService.get_or_create_conversation(user_id, conversation_id?)
+                        ↓
+        Fetch conversation history from DB (last 20 messages)
+                        ↓
+        Store user message in messages table
+                        ↓
+        Build message array: [system_prompt, history..., new_message]
+                        ↓
+        OpenAI Agent.run(messages, user_id)
+            ↓
+            OpenAI API call (GPT-4o)
+            ↓
+            AI extracts intent: "create task"
+            ↓
+            AI calls MCP tool: add_task(user_id=42, title="Buy groceries")
+                ↓
+                MCP tool → Database INSERT (tasks table, user_id=42)
+                ↓
+                Return: {success: true, data: {id: 123, title: "Buy groceries"}}
+            ↓
+            AI formats response: "✅ Created task: Buy groceries. Anything else?"
+            ↓
+            Return AI response to backend
+                        ↓
+        Store assistant message in messages table
+                        ↓
+        Update conversation.updated_at timestamp
+                        ↓
+        Return response to client
+        Response: {conversation_id: 1, response: "✅ Created task..."}
+                        ↓
+        Update Chat UI with AI response
+                        ↓
+        Display message in chat history
+```
+
+**5. AI Chat with Multi-turn Tool Calls:**
+```
+User: "Show me my tasks and mark the first one done"
+                        ↓
+        POST /api/chat/message
+                        ↓
+        [Same stateless cycle: verify JWT, get conversation, fetch history]
+                        ↓
+        OpenAI Agent processes request
+            ↓
+            Iteration 1: Call list_tasks(user_id=42)
+                ↓
+                MCP tool → SELECT * FROM tasks WHERE user_id=42
+                ↓
+                Return: {tasks: [{id: 1, title: "Buy groceries"}, ...]}
+            ↓
+            AI receives task list, identifies first task (id=1)
+            ↓
+            Iteration 2: Call complete_task(user_id=42, task_id=1)
+                ↓
+                MCP tool → UPDATE tasks SET completed=true WHERE id=1 AND user_id=42
+                ↓
+                Return: {success: true, data: {id: 1, completed: true}}
+            ↓
+            AI formats response with both results
+            ↓
+            Return: "You have 3 tasks: [...]. I marked 'Buy groceries' as complete! 🎉"
+                        ↓
+        Store assistant response in database
+                        ↓
+        Return to client
+                        ↓
+        Update Chat UI
+```
+
+**6. Conversation Persistence (Server Restart Scenario):**
+```
+User sends message → Backend processes → Server crashes
+                        ↓
+        User message stored in DB ✅
+        AI response stored in DB ✅
+                        ↓
+Server restarts (no state loss)
+                        ↓
+User refreshes page → Load /chat
+                        ↓
+        GET /api/conversations/{id}/messages
+                        ↓
+        Fetch messages from DB (stateless)
+                        ↓
+        Return: [{role: "user", content: "..."},
+                 {role: "assistant", content: "..."}]
+                        ↓
+        Render full conversation history
+                        ↓
+User continues conversation seamlessly ✅
+```
+
+**Key Architectural Decisions:**
+- **Stateless**: No server memory, all state in PostgreSQL
+- **Security**: user_id always from JWT, never from client input
+- **Scalability**: Multiple backend instances, any handles any request
+- **Reliability**: Conversations survive server restarts
+- **Performance**: Index on (user_id, updated_at) for fast conversation fetch
 
 ---
 
@@ -467,6 +722,217 @@ class TaskResponse(BaseModel):
 
 ---
 
+### Phase III: Conversation Model (SQLModel)
+
+**File:** `backend/models.py`
+
+```python
+class Conversation(SQLModel, table=True):
+    """Conversation model for AI chat sessions (Phase III)."""
+
+    __tablename__ = "conversations"
+
+    # Primary key (auto-increment)
+    id: Optional[int] = Field(default=None, primary_key=True)
+
+    # Foreign key to users
+    user_id: str = Field(foreign_key="users.id", index=True)
+
+    # Conversation metadata
+    title: Optional[str] = Field(default=None, max_length=200)
+    is_active: bool = Field(default=True, index=True)
+
+    # Timestamps
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+
+    # Relationships
+    user: User = Relationship(back_populates="conversations")
+    messages: list["Message"] = Relationship(back_populates="conversation", cascade_delete=True)
+```
+
+**Indexes:**
+- `user_id` + `updated_at` - For fetching user's recent conversations (performance)
+- `user_id` + `is_active` - For filtering active conversations
+- `updated_at` - For sorting conversations by recent activity
+
+**Constraints:**
+- `user_id` must reference valid user (foreign key)
+- `title` max 200 characters
+- `is_active` defaults to true (soft delete support)
+
+**Usage Pattern (Stateless):**
+```python
+# Get or create conversation (stateless - always fetch from DB)
+async def get_or_create_conversation(
+    db: AsyncSession,
+    user_id: str,
+    conversation_id: Optional[int] = None
+) -> Conversation:
+    """Get existing conversation or create new one."""
+    if conversation_id:
+        # Fetch existing conversation
+        result = await db.execute(
+            select(Conversation).where(
+                Conversation.id == conversation_id,
+                Conversation.user_id == user_id  # SECURITY: user isolation
+            )
+        )
+        conversation = result.scalar_one_or_none()
+        if not conversation:
+            raise HTTPException(404, "Conversation not found")
+        return conversation
+    else:
+        # Create new conversation
+        conversation = Conversation(user_id=user_id, title="New Chat")
+        db.add(conversation)
+        await db.commit()
+        await db.refresh(conversation)
+        return conversation
+```
+
+---
+
+### Phase III: Message Model (SQLModel)
+
+**File:** `backend/models.py`
+
+```python
+class Message(SQLModel, table=True):
+    """Message model for conversation messages (Phase III)."""
+
+    __tablename__ = "messages"
+
+    # Primary key (auto-increment)
+    id: Optional[int] = Field(default=None, primary_key=True)
+
+    # Foreign key to conversations
+    conversation_id: int = Field(foreign_key="conversations.id", index=True)
+
+    # Message data
+    role: str = Field(max_length=20)  # "user", "assistant", "system", "tool"
+    content: str = Field(sa_column=Column(Text))  # Unlimited length
+
+    # Timestamp
+    created_at: datetime = Field(default_factory=datetime.utcnow, index=True)
+
+    # Relationship
+    conversation: Conversation = Relationship(back_populates="messages")
+```
+
+**Indexes:**
+- `conversation_id` + `created_at` - For fetching messages chronologically (performance)
+
+**Constraints:**
+- `conversation_id` must reference valid conversation (foreign key)
+- `role` must be one of: "user", "assistant", "system", "tool"
+- `content` cannot be NULL
+- Cascade delete: Deleting conversation deletes all its messages
+
+**Usage Pattern (Stateless - Fetch Message History):**
+```python
+async def get_conversation_messages(
+    db: AsyncSession,
+    conversation_id: int,
+    limit: int = 20
+) -> list[Message]:
+    """Fetch last N messages for conversation (stateless)."""
+    result = await db.execute(
+        select(Message)
+        .where(Message.conversation_id == conversation_id)
+        .order_by(Message.created_at.desc())  # Most recent first
+        .limit(limit)
+    )
+    messages = result.scalars().all()
+    return list(reversed(messages))  # Return oldest first for AI context
+```
+
+**Usage Pattern (Store Message):**
+```python
+async def store_message(
+    db: AsyncSession,
+    conversation_id: int,
+    role: str,
+    content: str
+) -> Message:
+    """Store a message in the database (stateless)."""
+    message = Message(
+        conversation_id=conversation_id,
+        role=role,
+        content=content
+    )
+    db.add(message)
+    await db.commit()
+    await db.refresh(message)
+
+    # Update conversation's updated_at timestamp
+    conversation = await db.get(Conversation, conversation_id)
+    conversation.updated_at = datetime.utcnow()
+    await db.commit()
+
+    return message
+```
+
+---
+
+### Phase III: Pydantic Schemas
+
+**File:** `backend/schemas.py`
+
+```python
+class ChatMessageRequest(BaseModel):
+    """Schema for incoming chat message."""
+
+    conversation_id: Optional[int] = None
+    message: str = Field(..., min_length=1, max_length=5000)
+
+    @validator('message')
+    def message_must_not_be_empty(cls, v):
+        if not v.strip():
+            raise ValueError('Message cannot be empty')
+        return v.strip()
+
+
+class ChatMessageResponse(BaseModel):
+    """Schema for chat message response."""
+
+    conversation_id: int
+    response: str
+    tool_calls: Optional[list[dict]] = None  # For debugging
+
+    class Config:
+        from_attributes = True
+
+
+class ConversationResponse(BaseModel):
+    """Schema for conversation response."""
+
+    id: int
+    user_id: str
+    title: Optional[str]
+    created_at: datetime
+    updated_at: datetime
+    is_active: bool
+
+    class Config:
+        from_attributes = True
+
+
+class MessageResponse(BaseModel):
+    """Schema for message response."""
+
+    id: int
+    conversation_id: int
+    role: str
+    content: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+```
+
+---
+
 ## 4. API ENDPOINTS
 
 ### Endpoint 1: List Tasks
@@ -734,6 +1200,388 @@ async def toggle_complete(
     await db.refresh(task)
 
     return task
+```
+
+---
+
+### Phase III: Chat Message Endpoint
+
+**POST** `/api/chat/message`
+
+**Description:** Send a message to the AI chatbot and receive a response. Handles conversation state persistently in database (stateless architecture).
+
+**Request Body:**
+```json
+{
+  "conversation_id": 1,  // Optional: omit for new conversation
+  "message": "Add a task to buy groceries"
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "conversation_id": 1,
+  "response": "✅ Created task: Buy groceries. Anything else?",
+  "tool_calls": [  // Optional: for debugging
+    {
+      "tool": "add_task",
+      "args": {"user_id": 42, "title": "Buy groceries"},
+      "result": {"success": true, "data": {...}}
+    }
+  ]
+}
+```
+
+**Implementation:**
+```python
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
+from openai import AsyncOpenAI
+from typing import List, Dict, Any
+
+router = APIRouter()
+
+
+@router.post("/api/chat/message", response_model=ChatMessageResponse)
+async def send_chat_message(
+    request: ChatMessageRequest,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user)  # JWT verification
+):
+    """
+    Process chat message with stateless architecture.
+
+    Stateless Cycle:
+    1. Verify JWT and extract user_id
+    2. Get or create conversation (from DB)
+    3. Fetch conversation history (from DB)
+    4. Store user message (to DB)
+    5. Build message array for AI
+    6. Run OpenAI Agent with MCP tools
+    7. Store assistant response (to DB)
+    8. Return response to client
+
+    All state in PostgreSQL - server maintains NO memory.
+    """
+
+    # STEP 1: User authentication handled by get_current_user dependency
+    user_id = current_user.id
+
+    # STEP 2: Get or create conversation (stateless - fetch from DB)
+    conversation = await get_or_create_conversation(
+        db, user_id, request.conversation_id
+    )
+
+    # STEP 3: Fetch conversation history (stateless - last 20 messages)
+    messages_history = await get_conversation_messages(
+        db, conversation.id, limit=20
+    )
+
+    # STEP 4: Store user message in database
+    await store_message(
+        db=db,
+        conversation_id=conversation.id,
+        role="user",
+        content=request.message
+    )
+
+    # STEP 5: Build message array for OpenAI Agent
+    message_array = build_message_array(
+        history=messages_history,
+        new_message=request.message
+    )
+
+    # STEP 6: Run OpenAI Agent with MCP tools (stateless)
+    openai_client = AsyncOpenAI(api_key=settings.OPENAI_API_KEY)
+    agent = OpenAIAgent(
+        client=openai_client,
+        system_prompt=TODO_ASSISTANT_SYSTEM_PROMPT,
+        tools=get_mcp_tools()  # Returns list of 5 MCP tools
+    )
+
+    ai_response, tool_calls = await agent.run(
+        messages=message_array,
+        user_id=user_id,  # CRITICAL: Always pass user_id for security
+        max_iterations=5  # Limit tool call loops
+    )
+
+    # STEP 7: Store assistant response in database
+    await store_message(
+        db=db,
+        conversation_id=conversation.id,
+        role="assistant",
+        content=ai_response
+    )
+
+    # STEP 8: Return response to client
+    return ChatMessageResponse(
+        conversation_id=conversation.id,
+        response=ai_response,
+        tool_calls=tool_calls if settings.DEBUG else None  # Debug only
+    )
+
+
+def build_message_array(
+    history: List[Message],
+    new_message: str
+) -> List[Dict[str, str]]:
+    """Build message array for OpenAI API."""
+    messages = [
+        {"role": "system", "content": TODO_ASSISTANT_SYSTEM_PROMPT}
+    ]
+
+    # Add conversation history
+    for msg in history:
+        messages.append({
+            "role": msg.role,
+            "content": msg.content
+        })
+
+    # Add new user message
+    messages.append({
+        "role": "user",
+        "content": new_message
+    })
+
+    return messages
+```
+
+**OpenAI Agent Implementation:**
+```python
+from openai import AsyncOpenAI
+from typing import List, Dict, Any, Tuple
+
+
+class OpenAIAgent:
+    """OpenAI agent with MCP tool calling support."""
+
+    def __init__(
+        self,
+        client: AsyncOpenAI,
+        system_prompt: str,
+        tools: List[Dict[str, Any]]
+    ):
+        self.client = client
+        self.system_prompt = system_prompt
+        self.tools = tools
+        self.model = "gpt-4o"  # or "gpt-4o-mini" for cost savings
+
+    async def run(
+        self,
+        messages: List[Dict[str, str]],
+        user_id: int,
+        max_iterations: int = 5
+    ) -> Tuple[str, List[Dict[str, Any]]]:
+        """
+        Run agent with multi-turn tool calling.
+
+        Returns: (final_response, tool_calls_log)
+        """
+        tool_calls_log = []
+
+        for iteration in range(max_iterations):
+            # Call OpenAI API
+            response = await self.client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                tools=self.tools,
+                tool_choice="auto"
+            )
+
+            message = response.choices[0].message
+
+            # Check if AI wants to call tools
+            if message.tool_calls:
+                # Process each tool call
+                for tool_call in message.tool_calls:
+                    tool_name = tool_call.function.name
+                    tool_args = json.loads(tool_call.function.arguments)
+
+                    # CRITICAL: Inject user_id for security
+                    tool_args["user_id"] = user_id
+
+                    # Execute tool
+                    tool_result = await execute_mcp_tool(
+                        tool_name=tool_name,
+                        tool_args=tool_args
+                    )
+
+                    # Log tool call
+                    tool_calls_log.append({
+                        "tool": tool_name,
+                        "args": tool_args,
+                        "result": tool_result
+                    })
+
+                    # Add tool result to messages
+                    messages.append({
+                        "role": "tool",
+                        "tool_call_id": tool_call.id,
+                        "content": json.dumps(tool_result)
+                    })
+
+                # Continue loop with tool results
+                continue
+            else:
+                # No more tool calls - return final response
+                return message.content, tool_calls_log
+
+        # Max iterations reached
+        return (
+            "I had trouble processing that request. Can you simplify?",
+            tool_calls_log
+        )
+```
+
+**MCP Tools Implementation:**
+```python
+from typing import Dict, Any
+
+
+async def execute_mcp_tool(
+    tool_name: str,
+    tool_args: Dict[str, Any]
+) -> Dict[str, Any]:
+    """Execute an MCP tool by name."""
+    tools = {
+        "add_task": mcp_add_task,
+        "list_tasks": mcp_list_tasks,
+        "update_task": mcp_update_task,
+        "complete_task": mcp_complete_task,
+        "delete_task": mcp_delete_task
+    }
+
+    tool_function = tools.get(tool_name)
+    if not tool_function:
+        return {"success": false, "error": f"Tool '{tool_name}' not found"}
+
+    try:
+        result = await tool_function(**tool_args)
+        return result
+    except Exception as e:
+        return {"success": false, "error": str(e)}
+
+
+async def mcp_add_task(
+    user_id: int,
+    title: str,
+    description: str = None,
+    priority: str = "medium",
+    tags: List[str] = None,
+    due_date: str = None
+) -> Dict[str, Any]:
+    """MCP Tool: Create a new task."""
+    async with get_db_session() as db:
+        task = Task(
+            user_id=user_id,  # ALWAYS filter by user_id
+            title=title,
+            description=description,
+            # ... additional fields
+        )
+        db.add(task)
+        await db.commit()
+        await db.refresh(task)
+
+        return {
+            "success": True,
+            "data": {
+                "id": task.id,
+                "title": task.title,
+                "description": task.description,
+                "completed": task.completed
+            }
+        }
+
+
+async def mcp_list_tasks(
+    user_id: int,
+    status: str = None,
+    priority: str = None,
+    tags: List[str] = None,
+    limit: int = 20
+) -> Dict[str, Any]:
+    """MCP Tool: List tasks with filters."""
+    async with get_db_session() as db:
+        query = select(Task).where(
+            Task.user_id == user_id  # CRITICAL: user isolation
+        )
+
+        if status == "pending":
+            query = query.where(Task.completed == False)
+        elif status == "completed":
+            query = query.where(Task.completed == True)
+
+        # Additional filters...
+
+        result = await db.execute(query.limit(limit))
+        tasks = result.scalars().all()
+
+        return {
+            "success": True,
+            "data": {
+                "tasks": [
+                    {
+                        "id": t.id,
+                        "title": t.title,
+                        "description": t.description,
+                        "completed": t.completed
+                    }
+                    for t in tasks
+                ],
+                "count": len(tasks)
+            }
+        }
+
+
+# Similar implementations for update_task, complete_task, delete_task
+# All MUST filter by user_id for security
+```
+
+**System Prompt:**
+```python
+TODO_ASSISTANT_SYSTEM_PROMPT = """You are a personal TODO assistant helping users manage their tasks.
+
+Available Tools:
+- add_task(user_id, title, description?, priority?, tags?, due_date?): Create a new task
+- list_tasks(user_id, status?, priority?, tags?, limit?): List tasks with optional filters
+- update_task(user_id, task_id, title?, description?, status?, priority?): Update a task
+- complete_task(user_id, task_id): Mark a task as completed
+- delete_task(user_id, task_id): Delete a task (ASK FOR CONFIRMATION FIRST)
+
+Personality:
+- Friendly and helpful
+- Concise and action-oriented
+- Professional but not robotic
+- Celebrate task completions with 🎉
+- Confirm actions clearly
+
+Behavioral Rules:
+1. Always confirm what you did after calling a tool
+2. Ask clarifying questions if request is ambiguous
+3. NEVER delete tasks without explicit user confirmation
+4. Use emojis sparingly: ✅ ❌ 🎯 📅 🎉
+5. Offer next steps after completing an action
+
+Example Interactions:
+User: "Add task to buy groceries"
+You: Call add_task(user_id, "Buy groceries")
+You: "✅ Created task: Buy groceries. Anything else?"
+
+User: "What's on my list?"
+You: Call list_tasks(user_id)
+You: "You have 3 tasks:
+1. ⬜ Buy groceries (medium)
+2. ⬜ Finish report (high) - Due Friday
+3. ✅ Call dentist (completed)
+
+Would you like to mark any as complete?"
+
+Error Handling:
+- If a tool fails, explain what went wrong in user-friendly language
+- If you can't find a task, offer to show all tasks
+- If request is too complex, ask user to break it down
+"""
 ```
 
 ---
@@ -1360,12 +2208,18 @@ NODE_ENV=production
 
 **3. Environment Variables:**
 ```
+# Phase II (Required)
 DATABASE_URL=postgresql+asyncpg://...
 BETTER_AUTH_SECRET=your-32-character-secret-key-here
 CORS_ORIGINS=https://yourdomain.vercel.app
 DEBUG=False
 PORT=8000
+
+# Phase III (NEW - Required for AI Chatbot)
+OPENAI_API_KEY=sk-...your-openai-api-key...
 ```
+
+**Phase III Note:** OpenAI API key is required for AI chatbot functionality. Get it from https://platform.openai.com/api-keys
 
 **4. Deploy:**
 - Railway auto-deploys on push to `main`
@@ -1677,6 +2531,45 @@ function validateTask(data: { title: string; description?: string }) {
 - [ ] Document deployment process
 - [ ] Create runbook for common issues
 
+### Phase 5: AI Chatbot (Phase III)
+- [ ] Add OpenAI SDK dependencies to backend
+- [ ] Create Conversation and Message models
+- [ ] Create database migrations for new tables
+- [ ] Implement ConversationService (stateless)
+- [ ] Implement 5 MCP tools (add/list/update/complete/delete)
+- [ ] Create OpenAI Agent class with tool calling
+- [ ] Define TODO_ASSISTANT_SYSTEM_PROMPT
+- [ ] Implement POST /api/chat/message endpoint
+- [ ] Add OPENAI_API_KEY to environment variables
+- [ ] Test stateless architecture (server restart scenario)
+- [ ] Write tests for MCP tools (user isolation)
+- [ ] Write tests for conversation persistence
+
+### Phase 6: Chat Frontend (Phase III)
+- [ ] Install OpenAI ChatKit package
+- [ ] Create /chat page in Next.js
+- [ ] Implement chat UI components
+- [ ] Integrate with backend chat API
+- [ ] Handle JWT auth in chat requests (credentials: 'include')
+- [ ] Implement conversation state management
+- [ ] Add loading and error states for chat
+- [ ] Test 401 handling (session expiry)
+- [ ] Test multi-turn tool calling conversations
+- [ ] Test conversation persistence across page refreshes
+
+### Phase 7: AI Integration Testing (Phase III)
+- [ ] Test natural language task creation
+- [ ] Test task listing via chat
+- [ ] Test task completion via chat
+- [ ] Test task updates via chat
+- [ ] Test task deletion via chat (with confirmation)
+- [ ] Test multi-turn conversations (5+ iterations)
+- [ ] Test context tracking ("it", "that task" references)
+- [ ] Test conversation persistence across sessions
+- [ ] Test user isolation (can't access other users' conversations)
+- [ ] Test error handling (OpenAI API failures)
+- [ ] Performance testing (< 3 second response time)
+
 ---
 
 ## APPENDIX: TECHNOLOGY DECISIONS
@@ -1720,9 +2613,23 @@ function validateTask(data: { title: string; description?: string }) {
 
 **END OF IMPLEMENTATION PLAN**
 
-This document defines HOW to build Phase II. Next step: Break down into tasks (sp.tasks).
+This document defines HOW to build Phase II-III.
 
-**Version:** 1.0.0
-**Date:** 2026-01-01
+**Phase II**: Traditional web UI for task management
+**Phase III**: AI-powered chatbot with OpenAI Agents SDK and MCP tools
+
+Next step: Break down into tasks (sp.tasks).
+
+**Version:** 2.0.0
+**Date:** 2026-01-12
 **Status:** Ready for Task Breakdown
+**Phase III Additions:**
+- OpenAI Agent with multi-turn tool calling
+- 5 MCP tools (add/list/update/complete/delete)
+- Stateless conversation architecture
+- Conversation and Message models
+- POST /api/chat/message endpoint
+- OpenAI ChatKit frontend integration
+- Comprehensive Phase III implementation checklist
+
 **Next Step:** Create task list (sp.tasks)

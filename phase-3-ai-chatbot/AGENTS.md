@@ -598,6 +598,806 @@ This project uses specialized agents for different tasks. Each agent has specifi
 
 ---
 
+## 11. PHASE III: AI CHATBOT DEVELOPMENT RULES
+
+### Purpose of Phase III Rules
+
+Phase III adds conversational AI capabilities using OpenAI Agents SDK and Model Context Protocol (MCP) tools. **Stateless architecture is critical** - the chatbot must store all state in the database, never in memory.
+
+**Agents working on Phase III MUST follow these additional rules.**
+
+---
+
+### 1. CHATBOT SPEC-DRIVEN REQUIREMENTS
+
+**Rule:** All chatbot features must be specified before implementation.
+
+#### Required Specifications Before Coding:
+
+**In speckit.specify:**
+- ✅ User journey for AI chat interactions
+- ✅ MCP tool signatures (all 5 tools with parameters)
+- ✅ Natural language understanding requirements
+- ✅ AI agent behavior standards
+- ✅ Conversation persistence requirements
+- ✅ Database schema (conversations, messages tables)
+
+**In speckit.plan:**
+- ✅ OpenAI Agent class architecture
+- ✅ MCP tools implementation patterns
+- ✅ Stateless conversation flow diagrams
+- ✅ POST /api/chat/message endpoint design
+- ✅ System prompt definition
+- ✅ Tool calling orchestration logic
+
+**In speckit.tasks:**
+- ✅ Task breakdown for each MCP tool
+- ✅ Task for OpenAI Agent implementation
+- ✅ Task for conversation persistence
+- ✅ Task for chat endpoint
+- ✅ Task for frontend chat UI
+
+#### Agent Behavior:
+
+```
+❌ FORBIDDEN:
+Agent: "I'll implement the chat endpoint..."
+
+✅ REQUIRED:
+Agent: "I need to read:
+- speckit.specify §5.9 - Conversational Task Creation (Feature 9)
+- speckit.plan §4.7 - Chat Message Endpoint
+- speckit.tasks T-051 - Implement POST /api/chat/message
+
+All specs found. Proceeding with implementation referencing T-051."
+```
+
+---
+
+### 2. STATELESS ARCHITECTURE ENFORCEMENT
+
+**CRITICAL:** The chatbot MUST be stateless. All conversation state MUST be in the database.
+
+#### Stateless Architecture Rules:
+
+**✅ REQUIRED Patterns:**
+
+```python
+# CORRECT - Fetch from database every request
+@router.post("/api/chat/message")
+async def send_chat_message(request: ChatMessageRequest, db: AsyncSession):
+    # ALWAYS fetch conversation from database
+    conversation = await get_or_create_conversation(db, user_id, request.conversation_id)
+
+    # ALWAYS fetch message history from database
+    messages = await get_conversation_messages(db, conversation.id, limit=20)
+
+    # Process with AI agent
+    response = await agent.run(messages, user_id)
+
+    # ALWAYS store response in database
+    await store_message(db, conversation.id, "assistant", response)
+
+    return response
+```
+
+**❌ FORBIDDEN Patterns:**
+
+```python
+# WRONG - In-memory state (NEVER DO THIS)
+conversation_cache = {}  # ❌ Global state
+
+@router.post("/api/chat/message")
+async def send_chat_message(request: ChatMessageRequest):
+    # ❌ Storing in memory
+    if request.conversation_id not in conversation_cache:
+        conversation_cache[request.conversation_id] = []
+
+    # ❌ Using cached state
+    history = conversation_cache[request.conversation_id]
+
+    # This breaks stateless architecture!
+```
+
+```python
+# WRONG - Session-based state (NEVER DO THIS)
+from fastapi import Session
+
+sessions = {}  # ❌ Server-side sessions
+
+@router.post("/api/chat/message")
+async def send_chat_message(request: ChatMessageRequest, session: Session):
+    # ❌ Storing conversation in session
+    if "conversation" not in session:
+        session["conversation"] = []
+
+    # This breaks horizontal scaling!
+```
+
+#### Agent Behavior:
+
+**If agent creates stateful code → STOP and revise:**
+
+```
+Agent reviews own code and finds:
+conversations = {}  # Global dictionary
+
+Agent MUST:
+1. ❌ DELETE the stateful implementation
+2. ✅ REWRITE using database-backed pattern
+3. ✅ VERIFY all state stored in PostgreSQL
+4. ✅ TEST server restart scenario (conversation persists)
+```
+
+#### Stateless Validation Checklist:
+
+Before submitting any chat-related code, agent must verify:
+
+- [ ] NO global variables for conversation state
+- [ ] NO in-memory caches for messages
+- [ ] NO server-side sessions
+- [ ] ALL conversation data fetched from database
+- [ ] ALL messages stored in database immediately
+- [ ] Conversation survives server restart
+- [ ] Multiple server instances can handle same conversation
+
+---
+
+### 3. MCP TOOL DEVELOPMENT RULES
+
+**CRITICAL:** MCP tools are the AI agent's interface to the database. **Every tool MUST filter by user_id.**
+
+#### MCP Tool Requirements:
+
+**✅ REQUIRED Pattern:**
+
+```python
+async def mcp_add_task(
+    user_id: int,        # ✅ ALWAYS first parameter
+    title: str,          # Required
+    description: str = None,
+    priority: str = "medium"
+) -> Dict[str, Any]:
+    """
+    Create a new task. Use when user wants to add a task.
+
+    [Task]: T-052
+    [Spec]: speckit.specify §5.9 Feature 9 - Conversational Task Creation
+    """
+    async with get_db_session() as db:
+        task = Task(
+            user_id=user_id,  # ✅ CRITICAL: Filter by user
+            title=title,
+            description=description,
+            priority=priority
+        )
+        db.add(task)
+        await db.commit()
+
+        return {
+            "success": True,
+            "data": {"id": task.id, "title": task.title}
+        }
+
+
+async def mcp_list_tasks(
+    user_id: int,            # ✅ ALWAYS first parameter
+    status: str = None,
+    limit: int = 20
+) -> Dict[str, Any]:
+    """List user's tasks with optional filters."""
+    async with get_db_session() as db:
+        query = select(Task).where(
+            Task.user_id == user_id  # ✅ CRITICAL: User isolation
+        )
+
+        if status == "pending":
+            query = query.where(Task.completed == False)
+
+        result = await db.execute(query.limit(limit))
+        tasks = result.scalars().all()
+
+        return {
+            "success": True,
+            "data": {"tasks": [...], "count": len(tasks)}
+        }
+```
+
+**❌ FORBIDDEN Pattern:**
+
+```python
+# WRONG - Missing user_id parameter
+async def mcp_add_task(title: str, description: str = None):  # ❌ No user_id!
+    task = Task(title=title, description=description)  # ❌ No user isolation!
+    # This allows cross-user data leakage!
+
+
+# WRONG - Not filtering by user_id
+async def mcp_list_tasks(user_id: int, status: str = None):
+    query = select(Task)  # ❌ No WHERE user_id filter!
+    # Returns ALL users' tasks - major security breach!
+```
+
+#### MCP Tool Checklist:
+
+Every MCP tool implementation MUST:
+
+- [ ] Accept `user_id: int` as **first parameter**
+- [ ] Include `user_id` in ALL database queries (`WHERE user_id = ?`)
+- [ ] Be stateless (no global variables)
+- [ ] Return structured JSON (`Dict[str, Any]`)
+- [ ] Have type hints on all parameters
+- [ ] Have clear docstring explaining when to use
+- [ ] Handle errors gracefully (return `{"success": False, "error": "..."}`)
+- [ ] Reference Task ID in docstring
+
+#### Agent Behavior:
+
+**If agent creates MCP tool without user_id filtering → REJECT:**
+
+```
+Agent implements:
+async def mcp_list_tasks(status: str = None):  # ❌ No user_id!
+    ...
+
+Agent MUST:
+1. ❌ STOP implementation immediately
+2. ✅ ADD user_id as first parameter
+3. ✅ ADD WHERE clause filtering by user_id
+4. ✅ VERIFY no cross-user data leakage
+5. ✅ TEST with different user_ids
+```
+
+---
+
+### 4. OPENAI AGENT INTEGRATION RULES
+
+**Rule:** OpenAI Agent must be integrated according to specifications, not invented patterns.
+
+#### Required Before Implementation:
+
+**In speckit.plan:**
+- ✅ OpenAI Agent class structure defined
+- ✅ Tool registration pattern specified
+- ✅ System prompt defined
+- ✅ Multi-turn conversation handling specified
+- ✅ Tool calling orchestration logic documented
+
+#### OpenAI Agent Requirements:
+
+**✅ REQUIRED Pattern:**
+
+```python
+class OpenAIAgent:
+    """
+    OpenAI agent with MCP tool calling support.
+
+    [Task]: T-053
+    [Spec]: speckit.plan §4.7 - OpenAI Agent Processing
+    """
+
+    def __init__(
+        self,
+        client: AsyncOpenAI,
+        system_prompt: str,
+        tools: List[Dict[str, Any]]
+    ):
+        self.client = client
+        self.system_prompt = system_prompt
+        self.tools = tools
+        self.model = "gpt-4o"  # From spec
+
+    async def run(
+        self,
+        messages: List[Dict[str, str]],
+        user_id: int,  # ✅ CRITICAL: Always pass user_id
+        max_iterations: int = 5
+    ) -> Tuple[str, List[Dict]]:
+        """
+        Run agent with multi-turn tool calling.
+
+        [Spec]: speckit.plan §4.7 - Multi-turn conversations (max 5 iterations)
+        """
+        tool_calls_log = []
+
+        for iteration in range(max_iterations):
+            response = await self.client.chat.completions.create(
+                model=self.model,
+                messages=messages,
+                tools=self.tools
+            )
+
+            message = response.choices[0].message
+
+            if message.tool_calls:
+                for tool_call in message.tool_calls:
+                    tool_args = json.loads(tool_call.function.arguments)
+
+                    # ✅ CRITICAL: Inject user_id for security
+                    tool_args["user_id"] = user_id
+
+                    # Execute MCP tool
+                    tool_result = await execute_mcp_tool(
+                        tool_call.function.name,
+                        tool_args
+                    )
+
+                    tool_calls_log.append({...})
+                    messages.append({"role": "tool", ...})
+
+                continue  # Continue loop
+            else:
+                return message.content, tool_calls_log
+
+        # Max iterations reached
+        return "I had trouble processing that. Can you simplify?", tool_calls_log
+```
+
+#### System Prompt Requirements:
+
+**System prompt MUST be defined in speckit.plan before implementation:**
+
+```python
+TODO_ASSISTANT_SYSTEM_PROMPT = """You are a personal TODO assistant...
+
+[Task]: T-054
+[Spec]: speckit.plan §4.7 - System Prompt Requirements
+
+Available Tools:
+- add_task(user_id, title, ...): Create a new task
+- list_tasks(user_id, ...): List tasks
+- ... (all 5 tools documented)
+
+Personality:
+- Friendly and helpful
+- Concise and action-oriented
+...
+
+[From]: speckit.plan §6 - AI Agent Behavior Specification
+"""
+```
+
+#### Agent Behavior:
+
+**If system prompt not in specs → STOP:**
+
+```
+Agent: "I need to implement the OpenAI agent, but I cannot find:
+- speckit.plan §6 - AI Agent Behavior Specification
+- System prompt definition
+
+Please add the system prompt to speckit.plan before I proceed."
+```
+
+---
+
+### 5. CONVERSATION PERSISTENCE RULES
+
+**Rule:** Every message (user and assistant) MUST be stored in the database immediately.
+
+#### Conversation Persistence Pattern:
+
+**✅ REQUIRED Implementation:**
+
+```python
+@router.post("/api/chat/message")
+async def send_chat_message(
+    request: ChatMessageRequest,
+    db: AsyncSession,
+    current_user: User
+):
+    """
+    [Task]: T-051
+    [Spec]: speckit.specify §5.14 Feature 14 - Conversation Persistence
+    [Plan]: speckit.plan §4.7 - Chat Message Endpoint
+    """
+
+    # STEP 1: Get or create conversation (from DB)
+    conversation = await get_or_create_conversation(
+        db, current_user.id, request.conversation_id
+    )
+
+    # STEP 2: Fetch conversation history (from DB, last 20 messages)
+    messages_history = await get_conversation_messages(
+        db, conversation.id, limit=20
+    )
+
+    # STEP 3: ✅ Store user message IMMEDIATELY
+    await store_message(
+        db=db,
+        conversation_id=conversation.id,
+        role="user",
+        content=request.message
+    )
+
+    # STEP 4: Process with AI agent
+    message_array = build_message_array(messages_history, request.message)
+    ai_response, tool_calls = await agent.run(message_array, current_user.id)
+
+    # STEP 5: ✅ Store assistant response IMMEDIATELY
+    await store_message(
+        db=db,
+        conversation_id=conversation.id,
+        role="assistant",
+        content=ai_response
+    )
+
+    # STEP 6: Return response
+    return ChatMessageResponse(
+        conversation_id=conversation.id,
+        response=ai_response
+    )
+```
+
+#### Database Operations:
+
+**Store message function MUST:**
+
+```python
+async def store_message(
+    db: AsyncSession,
+    conversation_id: int,
+    role: str,  # "user" | "assistant" | "system" | "tool"
+    content: str
+) -> Message:
+    """
+    Store a message in the database.
+
+    [Task]: T-055
+    [Spec]: speckit.specify §5.14 AC1 - Database Persistence
+    """
+    message = Message(
+        conversation_id=conversation_id,
+        role=role,
+        content=content
+    )
+    db.add(message)
+    await db.commit()
+    await db.refresh(message)
+
+    # ✅ Update conversation timestamp
+    conversation = await db.get(Conversation, conversation_id)
+    conversation.updated_at = datetime.utcnow()
+    await db.commit()
+
+    return message
+```
+
+**Fetch messages function MUST:**
+
+```python
+async def get_conversation_messages(
+    db: AsyncSession,
+    conversation_id: int,
+    limit: int = 20
+) -> List[Message]:
+    """
+    Fetch last N messages for conversation.
+
+    [Task]: T-055
+    [Spec]: speckit.specify §5.14 AC2 - Conversation Retrieval
+    """
+    result = await db.execute(
+        select(Message)
+        .where(Message.conversation_id == conversation_id)
+        .order_by(Message.created_at.desc())  # Most recent first
+        .limit(limit)
+    )
+    messages = result.scalars().all()
+    return list(reversed(messages))  # Return oldest first for AI context
+```
+
+#### Agent Behavior:
+
+**Verify persistence after implementation:**
+
+- [ ] User message stored BEFORE AI processing
+- [ ] Assistant response stored AFTER AI completion
+- [ ] Timestamps recorded for all messages
+- [ ] Conversation updated_at timestamp updated
+- [ ] Messages linked to conversation via conversation_id
+- [ ] Test: Server restart preserves conversation history
+- [ ] Test: Page refresh shows full conversation
+
+---
+
+### 6. PROHIBITED PATTERNS IN PHASE III
+
+**Agents MUST NOT create these patterns. If found in code, STOP and revise.**
+
+#### ❌ PROHIBITED: Stateful Chatbot
+
+```python
+# WRONG - Global state
+conversations = {}  # ❌ FORBIDDEN
+
+@router.post("/api/chat/message")
+async def send_chat_message(request):
+    if request.conversation_id not in conversations:
+        conversations[request.conversation_id] = []
+
+    # ❌ This breaks stateless architecture
+```
+
+**Why prohibited:** Breaks horizontal scaling, loses data on server restart.
+
+---
+
+#### ❌ PROHIBITED: MCP Tools Without user_id
+
+```python
+# WRONG - No user_id parameter
+async def mcp_add_task(title: str):  # ❌ Missing user_id
+    task = Task(title=title)
+    # ❌ No user isolation - security breach!
+```
+
+**Why prohibited:** Cross-user data leakage, major security vulnerability.
+
+---
+
+#### ❌ PROHIBITED: MCP Tools Without Filtering
+
+```python
+# WRONG - No WHERE clause
+async def mcp_list_tasks(user_id: int):
+    query = select(Task)  # ❌ No .where(Task.user_id == user_id)
+    # ❌ Returns all users' tasks!
+```
+
+**Why prohibited:** Exposes other users' private data.
+
+---
+
+#### ❌ PROHIBITED: Chat Without Persistence
+
+```python
+# WRONG - Not storing messages
+@router.post("/api/chat/message")
+async def send_chat_message(request):
+    response = await agent.run([request.message], user_id)
+
+    # ❌ Not storing user message
+    # ❌ Not storing assistant response
+    # ❌ Conversation lost on server restart
+
+    return response
+```
+
+**Why prohibited:** Conversation doesn't persist, violates specs.
+
+---
+
+#### ❌ PROHIBITED: Global Variables in MCP Server
+
+```python
+# WRONG - Global state
+task_cache = {}  # ❌ FORBIDDEN
+
+async def mcp_list_tasks(user_id: int):
+    if user_id in task_cache:
+        return task_cache[user_id]  # ❌ Cached state
+```
+
+**Why prohibited:** Breaks stateless architecture, stale data.
+
+---
+
+#### ❌ PROHIBITED: Skipping JWT Auth
+
+```python
+# WRONG - No authentication
+@router.post("/api/chat/message")
+async def send_chat_message(request):  # ❌ No current_user dependency
+    # ❌ Anyone can access any conversation
+```
+
+**Why prohibited:** Security breach, no user isolation.
+
+---
+
+#### ❌ PROHIBITED: Hardcoded System Prompts
+
+```python
+# WRONG - Prompt not in specs
+class OpenAIAgent:
+    def __init__(self):
+        self.system_prompt = "You are a helpful assistant"  # ❌ Invented prompt
+        # ❌ Not from speckit.plan
+```
+
+**Why prohibited:** Behavior not specified, can't be reviewed.
+
+---
+
+### 7. REQUIRED TESTING FOR CHATBOT
+
+**Agents MUST verify these scenarios before marking implementation complete.**
+
+#### Individual MCP Tool Tests:
+
+```python
+# Test each tool in isolation
+async def test_mcp_add_task():
+    """
+    [Task]: T-052
+    [Spec]: speckit.specify §5.9 AC2 - MCP Tool Integration
+    """
+    result = await mcp_add_task(
+        user_id=1,
+        title="Test task",
+        priority="high"
+    )
+
+    assert result["success"] == True
+    assert result["data"]["id"] is not None
+    assert result["data"]["title"] == "Test task"
+
+
+async def test_mcp_list_tasks_user_isolation():
+    """
+    [Task]: T-056
+    [Spec]: speckit.specify §5.14 AC6 - Authorization
+    """
+    # Create tasks for user 1
+    await mcp_add_task(user_id=1, title="User 1 task")
+
+    # Create tasks for user 2
+    await mcp_add_task(user_id=2, title="User 2 task")
+
+    # List tasks for user 1
+    result = await mcp_list_tasks(user_id=1)
+
+    # ✅ CRITICAL: User 1 should only see their own tasks
+    assert len(result["data"]["tasks"]) == 1
+    assert result["data"]["tasks"][0]["title"] == "User 1 task"
+
+    # User 1 should NOT see user 2's tasks
+    assert "User 2 task" not in [t["title"] for t in result["data"]["tasks"]]
+```
+
+#### Tool Chaining Tests:
+
+```python
+async def test_multi_turn_conversation():
+    """
+    [Task]: T-057
+    [Spec]: speckit.specify Journey 4 - Managing Tasks via AI Chatbot
+    """
+    # User: "Show me my tasks and mark the first one done"
+
+    response = await send_chat_message(
+        conversation_id=None,
+        message="Show me my tasks and mark the first one done",
+        user_id=1
+    )
+
+    # Agent should:
+    # 1. Call list_tasks(user_id=1)
+    # 2. Call complete_task(user_id=1, task_id=first_task_id)
+
+    assert "✅" in response.response
+    assert "marked" in response.response.lower()
+```
+
+#### Conversation Persistence Tests:
+
+```python
+async def test_conversation_persists_across_requests():
+    """
+    [Task]: T-058
+    [Spec]: speckit.specify §5.14 AC3 - Stateless Architecture
+    """
+    # Request 1: Create task
+    response1 = await send_chat_message(
+        conversation_id=None,
+        message="Add task to buy groceries",
+        user_id=1
+    )
+
+    conversation_id = response1.conversation_id
+
+    # Request 2: Reference previous task (using context)
+    response2 = await send_chat_message(
+        conversation_id=conversation_id,
+        message="Mark it as done",  # "it" refers to previous task
+        user_id=1
+    )
+
+    # Agent should understand "it" from conversation history
+    assert "✅" in response2.response
+    assert "buy groceries" in response2.response.lower()
+
+
+async def test_conversation_survives_server_restart():
+    """
+    [Task]: T-059
+    [Spec]: speckit.specify §5.14 AC3 - Stateless Architecture
+    """
+    # Send message
+    response = await send_chat_message(
+        conversation_id=None,
+        message="Add task to finish report",
+        user_id=1
+    )
+
+    conversation_id = response.conversation_id
+
+    # Simulate server restart (clear all in-memory state)
+    # In real code, this would be an actual server restart
+
+    # Fetch conversation history
+    messages = await get_conversation_messages(db, conversation_id)
+
+    # ✅ CRITICAL: Conversation must persist
+    assert len(messages) >= 2  # User message + assistant response
+    assert messages[0].role == "user"
+    assert messages[0].content == "Add task to finish report"
+    assert messages[1].role == "assistant"
+```
+
+#### User Isolation Tests:
+
+```python
+async def test_users_cannot_access_other_conversations():
+    """
+    [Task]: T-060
+    [Spec]: speckit.specify §5.14 AC6 - Authorization
+    """
+    # User 1 creates conversation
+    response1 = await send_chat_message(
+        conversation_id=None,
+        message="Hello",
+        user_id=1
+    )
+
+    conversation_id = response1.conversation_id
+
+    # User 2 tries to access user 1's conversation
+    with pytest.raises(HTTPException) as exc_info:
+        await send_chat_message(
+            conversation_id=conversation_id,  # User 1's conversation
+            message="Hello",
+            user_id=2  # ❌ Different user
+        )
+
+    # ✅ Should return 403 Forbidden or 404 Not Found
+    assert exc_info.value.status_code in [403, 404]
+```
+
+#### Agent Behavior Testing Checklist:
+
+Before marking Phase III implementation complete, agent must verify:
+
+- [ ] Each MCP tool tested individually (add, list, update, complete, delete)
+- [ ] User isolation tested (user 1 can't access user 2's data)
+- [ ] Tool chaining tested (multi-turn conversations work)
+- [ ] Conversation persistence tested (survives page refresh)
+- [ ] Server restart tested (conversation recovered from DB)
+- [ ] Context tracking tested ("it", "that task" references work)
+- [ ] Error handling tested (tool failures handled gracefully)
+- [ ] JWT auth tested (401 on expired token)
+- [ ] Performance tested (< 3 second response time per spec)
+
+---
+
+### Phase III Agent Contract
+
+**By implementing Phase III features, agents agree to:**
+
+1. ✅ **Stateless ALWAYS** - No in-memory conversation state, ever
+2. ✅ **user_id ALWAYS first** - Every MCP tool, every database query
+3. ✅ **Store EVERYTHING** - User messages, assistant responses, immediately
+4. ✅ **Test user isolation** - Verify no cross-user data leakage
+5. ✅ **Follow AI specs** - System prompt, tool behavior from speckit.plan
+6. ✅ **Test persistence** - Conversation survives server restart
+7. ✅ **Reference tasks** - Every line links to Task ID and spec
+8. ✅ **STOP if stateful** - Revise immediately if in-memory state created
+
+**Remember:** Phase III stateless architecture is NON-NEGOTIABLE. If an agent creates stateful code, it MUST be rejected and rewritten.
+
+---
+
 ## Summary: The Agent Contract
 
 By working on this project, AI agents agree to:
@@ -615,7 +1415,8 @@ By working on this project, AI agents agree to:
 
 ---
 
-**Project:** Phase II - Full-Stack Web Application
+**Project:** Phase II-III - Full-Stack Web Application with AI Chatbot
 **Framework:** SpecKit Plus
-**Last Updated:** 2025-12-31
+**Last Updated:** 2026-01-12
+**Phase III Critical:** Stateless architecture, user_id filtering, conversation persistence
 **Compliance:** Mandatory for all AI agents
