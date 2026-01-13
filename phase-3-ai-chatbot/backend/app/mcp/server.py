@@ -25,20 +25,105 @@ Version: 1.0.0
 """
 
 from typing import Dict, Any, List, Optional
+from contextlib import asynccontextmanager
 
-# TODO: Import MCP SDK in AI-BACK-003
-# from mcp import MCPServer
+# MCP SDK imports
+from mcp.server import Server
+from mcp.types import Tool
 
-# TODO: Import database session utilities in AI-BACK-003
-# from app.database import get_db
+# Database imports
+from sqlmodel.ext.asyncio.session import AsyncSession
+from app.database import async_session_maker
 
-# TODO: Import Task model in AI-BACK-003
-# from app.models import Task
+# Model imports (for future tool implementations)
+from app.models import Task
 
 
-# Placeholder MCP server initialization
-# Will be implemented in AI-BACK-003: Create MCP Server Module
-mcp_server = None  # type: ignore
+# Initialize MCP Server
+# This server provides stateless tools for the AI agent to manage TODO tasks
+mcp_server = Server(name="todo-assistant")
+
+
+# Database session context manager for MCP tools
+@asynccontextmanager
+async def get_db_session():
+    """
+    Get async database session for MCP tools.
+
+    This context manager provides database access for MCP tools while maintaining
+    stateless architecture. Each tool call gets a fresh session.
+
+    Yields:
+        AsyncSession: SQLModel async database session
+
+    Example:
+        async with get_db_session() as db:
+            task = Task(user_id=user_id, title="Example")
+            db.add(task)
+            await db.commit()
+    """
+    async with async_session_maker() as session:
+        try:
+            yield session
+            await session.commit()
+        except Exception:
+            await session.rollback()
+            raise
+        finally:
+            await session.close()
+
+
+# Tool registration dictionary
+# Maps tool names to their handler functions
+_tool_handlers: Dict[str, callable] = {}
+
+
+def tool(name: str, description: str, input_schema: Dict[str, Any]):
+    """
+    Decorator for registering MCP tools.
+
+    This decorator registers a function as an MCP tool that can be called by the AI agent.
+
+    Args:
+        name: Tool name (must match function name)
+        description: Clear description of when agent should use this tool
+        input_schema: JSON Schema describing tool parameters
+
+    Returns:
+        Decorator function that registers the tool
+
+    Example:
+        @tool(
+            name="add_task",
+            description="Create a new TODO task when user wants to add a task",
+            input_schema={
+                "type": "object",
+                "properties": {
+                    "user_id": {"type": "string"},
+                    "title": {"type": "string"},
+                    "description": {"type": "string"}
+                },
+                "required": ["user_id", "title"]
+            }
+        )
+        async def add_task(user_id: str, title: str, description: str = None):
+            ...
+    """
+    def decorator(func: callable):
+        # Register tool with MCP server
+        tool_obj = Tool(
+            name=name,
+            description=description,
+            inputSchema=input_schema
+        )
+
+        # Store handler function
+        _tool_handlers[name] = func
+
+        # Return original function (allows normal calling)
+        return func
+
+    return decorator
 
 
 # Tool implementations will be added in tasks AI-BACK-004 through AI-BACK-006:
@@ -47,15 +132,5 @@ mcp_server = None  # type: ignore
 # - AI-BACK-006: Implement delete_task MCP Tool
 
 
-def get_db_session():
-    """
-    Get async database session for MCP tools.
-
-    This helper function will be implemented in AI-BACK-003.
-    It provides database access for MCP tools while maintaining stateless architecture.
-    """
-    raise NotImplementedError("Database session helper not yet implemented")
-
-
-# Export server instance
-__all__ = ["mcp_server", "get_db_session"]
+# Export server instance and utilities
+__all__ = ["mcp_server", "get_db_session", "tool", "_tool_handlers"]

@@ -97,6 +97,65 @@ pydantic==2.12.5 (updated)
 
 ---
 
+#### ✅ Task AI-BACK-003: Create MCP Server Module
+**Date:** 2026-01-13
+**Duration:** 30 minutes
+**Status:** Complete
+
+**What Was Done:**
+- Initialized MCP Server with name "todo-assistant"
+- Created async database session context manager for MCP tools
+- Implemented tool registration decorator for registering MCP tools
+- Set up tool handler dictionary for storing tool functions
+- Imported MCP SDK (Server, Tool types)
+- Integrated with existing database session maker
+- Created complete tool registration infrastructure
+
+**Key Components Created:**
+
+1. **MCP Server Instance:**
+   ```python
+   mcp_server = Server(name="todo-assistant")
+   ```
+
+2. **Database Session Helper:**
+   ```python
+   @asynccontextmanager
+   async def get_db_session():
+       async with async_session_maker() as session:
+           try:
+               yield session
+               await session.commit()
+           except Exception:
+               await session.rollback()
+               raise
+   ```
+
+3. **Tool Registration Decorator:**
+   ```python
+   def tool(name: str, description: str, input_schema: Dict[str, Any]):
+       def decorator(func: callable):
+           tool_obj = Tool(name=name, description=description, inputSchema=input_schema)
+           _tool_handlers[name] = func
+           return func
+       return decorator
+   ```
+
+**Verification:**
+- MCP Server imported successfully ✅
+- Database session helper working ✅
+- Tool decorator functional (tested with example tool) ✅
+- All imports resolve correctly ✅
+- Module exports properly configured ✅
+
+**Files Modified:**
+- `backend/app/mcp/server.py` - Implemented MCP server infrastructure
+- `backend/app/mcp/__init__.py` - Updated exports
+
+**Next Task:** AI-BACK-004 - Implement add_task MCP Tool
+
+---
+
 ### Phase 2: Backend - AI Integration
 *To be started after Phase 1 completion*
 
@@ -198,4 +257,4 @@ history/
 ---
 
 **Last Updated:** 2026-01-13
-**Next Update:** After completing AI-BACK-003
+**Next Update:** After completing AI-BACK-004
