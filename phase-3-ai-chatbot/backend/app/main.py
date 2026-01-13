@@ -13,7 +13,7 @@ from contextlib import asynccontextmanager
 
 from app.config import settings
 from app.database import init_db
-from app.routers import auth, tasks
+from app.routers import auth, tasks, chat
 
 
 @asynccontextmanager
@@ -41,8 +41,8 @@ async def lifespan(app: FastAPI):
 # Create FastAPI app
 app = FastAPI(
     title="Todo Manager API",
-    description="RESTful API for todo management with authentication",
-    version="1.0.0",
+    description="RESTful API for todo management with authentication and AI-powered chatbot",
+    version="2.0.0",  # Phase III: AI Chatbot
     docs_url="/docs",
     redoc_url="/redoc",
     lifespan=lifespan,
@@ -63,6 +63,7 @@ app.add_middleware(
 # Register routers
 app.include_router(auth.router)
 app.include_router(tasks.router)
+app.include_router(chat.router)  # Phase III: AI Chatbot
 
 
 # Root endpoint
@@ -76,7 +77,13 @@ async def root():
     """
     return {
         "message": "Welcome to Todo Manager API",
-        "version": "1.0.0",
+        "version": "2.0.0",
+        "phase": "III - AI-Powered Chatbot",
+        "features": [
+            "Task Management (CRUD)",
+            "User Authentication (JWT)",
+            "AI Chatbot (OpenAI + MCP Tools)"
+        ],
         "docs": "/docs",
         "status": "operational",
     }

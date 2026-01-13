@@ -6,8 +6,11 @@ Environment variables:
 - JWT_SECRET: Secret key for JWT token verification
 - BETTER_AUTH_SECRET: Secret key for Better Auth (same as JWT_SECRET)
 - CORS_ORIGINS: Comma-separated list of allowed origins
+- OPENAI_API_KEY: OpenAI API key for Phase III AI chatbot (Phase III)
+- OPENAI_MODEL: OpenAI model to use (Phase III, optional, defaults to gpt-4o)
 """
 
+from typing import Optional
 from pydantic_settings import BaseSettings
 from pydantic import ConfigDict
 
@@ -30,6 +33,10 @@ class Settings(BaseSettings):
     # API
     api_prefix: str = "/api"
     debug: bool = True
+
+    # Phase III: AI Chatbot - OpenAI Configuration
+    openai_api_key: Optional[str] = None
+    openai_model: str = "gpt-4o"
 
     model_config = ConfigDict(
         env_file=".env",

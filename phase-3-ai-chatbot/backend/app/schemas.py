@@ -167,3 +167,59 @@ class ErrorResponse(BaseModel):
     """Standard error response."""
 
     detail: str
+
+
+# ============================================================================
+# Phase III: Chat Schemas
+# ============================================================================
+
+
+class ChatMessageRequest(BaseModel):
+    """
+    Schema for chat message request.
+
+    Phase III: AI Chatbot - Conversational task management.
+    """
+
+    conversation_id: Optional[int] = None
+    message: str = Field(..., min_length=1, max_length=5000)
+
+
+class ChatMessageResponse(BaseModel):
+    """
+    Schema for chat message response.
+
+    Phase III: AI Chatbot - Contains AI assistant's response.
+    """
+
+    conversation_id: int
+    response: str
+
+
+class ConversationResponse(BaseModel):
+    """
+    Schema for conversation metadata.
+
+    Phase III: AI Chatbot - List conversations for a user.
+    """
+
+    id: int
+    user_id: str
+    title: Optional[str]
+    created_at: datetime
+    updated_at: datetime
+    is_active: bool
+
+    class Config:
+        from_attributes = True
+
+
+class ConversationListResponse(BaseModel):
+    """
+    Schema for list of conversations.
+
+    Phase III: AI Chatbot - User's conversation history.
+    """
+
+    conversations: List[ConversationResponse]
+    total: int
