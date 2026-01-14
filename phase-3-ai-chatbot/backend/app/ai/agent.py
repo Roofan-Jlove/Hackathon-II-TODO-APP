@@ -126,7 +126,10 @@ class TodoAgent:
         Raises:
             ValueError: If API key not provided and not in environment
         """
-        self.api_key = api_key or os.getenv("OPENAI_API_KEY")
+        # Import settings here to avoid circular imports
+        from app.config import settings
+
+        self.api_key = api_key or settings.openai_api_key or os.getenv("OPENAI_API_KEY")
         if not self.api_key:
             raise ValueError(
                 "OpenAI API key not provided. Set OPENAI_API_KEY environment variable."
@@ -134,7 +137,7 @@ class TodoAgent:
 
         # Initialize AsyncOpenAI client
         self.client = AsyncOpenAI(api_key=self.api_key)
-        self.model = os.getenv("OPENAI_MODEL", "gpt-4o")
+        self.model = settings.openai_model or os.getenv("OPENAI_MODEL", "gpt-4o")
 
         # Register MCP tools
         self.tool_functions = {

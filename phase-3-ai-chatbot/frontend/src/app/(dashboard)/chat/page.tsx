@@ -19,7 +19,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Send, Bot, User as UserIcon, Loader2, MessageSquare } from "lucide-react";
+import { Send, Bot, User as UserIcon, Loader2, MessageSquare, X, ArrowLeft } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { sendChatMessage } from "@/lib/api";
@@ -42,6 +42,7 @@ export default function ChatPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [conversationId, setConversationId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [currentTime, setCurrentTime] = useState(new Date());
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // Get user on mount
@@ -51,6 +52,15 @@ export default function ChatPage() {
       setUser(currentUser);
     }
     loadUser();
+  }, []);
+
+  // Update current time every minute
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 60000); // Update every minute
+
+    return () => clearInterval(timer);
   }, []);
 
   // Auto-scroll to bottom when new messages arrive
@@ -118,17 +128,45 @@ export default function ChatPage() {
       <div className="container mx-auto px-4 py-6 max-w-4xl">
         {/* Header */}
         <div className="bg-white rounded-t-2xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-gradient-to-br from-purple-500 to-blue-600 rounded-xl shadow-md">
-              <Bot className="w-6 h-6 text-white" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-gradient-to-br from-purple-500 to-blue-600 rounded-xl shadow-md">
+                <Bot className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  AI Task Assistant
+                </h1>
+                <p className="text-sm text-gray-600">
+                  Ask me to create, update, or manage your tasks
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                AI Task Assistant
-              </h1>
-              <p className="text-sm text-gray-600">
-                Ask me to create, update, or manage your tasks
-              </p>
+            {/* Close button and current date */}
+            <div className="flex items-center gap-4">
+              <div className="text-right">
+                <p className="text-sm font-medium text-gray-700">
+                  {currentTime.toLocaleDateString("en-US", {
+                    weekday: "long",
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </p>
+                <p className="text-xs text-gray-500">
+                  {currentTime.toLocaleTimeString("en-US", {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </p>
+              </div>
+              <button
+                onClick={() => router.push("/tasks")}
+                className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                title="Close chat"
+              >
+                <X className="w-6 h-6 text-gray-500 hover:text-gray-700" />
+              </button>
             </div>
           </div>
         </div>
@@ -203,7 +241,9 @@ export default function ChatPage() {
                           : "text-gray-500"
                       }`}
                     >
-                      {message.timestamp.toLocaleTimeString([], {
+                      {message.timestamp.toLocaleString("en-US", {
+                        month: "short",
+                        day: "numeric",
                         hour: "2-digit",
                         minute: "2-digit",
                       })}

@@ -1,6 +1,6 @@
 "use client";
 
-import { Search, Plus, ArrowUpDown } from "lucide-react";
+import { Search, Plus, ArrowUpDown, MessageCircle } from "lucide-react";
 import { getUser } from "@/lib/auth";
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -52,6 +52,14 @@ export default function KanbanNavbar({
             <Plus size={16} />
             <span>New Task</span>
           </button>
+          {/* AI Chat Button */}
+          <Link
+            href="/chat"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-green-500 to-teal-500 text-white text-sm rounded-lg hover:from-green-600 hover:to-teal-600 transition shadow-lg hover:shadow-xl"
+          >
+            <MessageCircle size={16} />
+            <span>AI Chat</span>
+          </Link>
         </div>
 
         {/* Center: Spacer */}
