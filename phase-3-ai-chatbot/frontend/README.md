@@ -1,31 +1,40 @@
-# Todo Manager Frontend - Next.js
+# Todo Manager Frontend - Next.js + AI Chat
 
-> Modern, responsive frontend for the Todo Manager application built with Next.js 16+, TypeScript, and Tailwind CSS.
+> Modern, responsive frontend with AI-powered chatbot for the Todo Manager application built with Next.js 16+, TypeScript, Tailwind CSS, and OpenAI ChatKit.
 
 [![Next.js](https://img.shields.io/badge/Next.js-16%2B-black)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9%2B-blue)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3.4%2B-38B2AC)](https://tailwindcss.com/)
 [![React](https://img.shields.io/badge/React-19.2%2B-61DAFB)](https://react.dev/)
+[![OpenAI ChatKit](https://img.shields.io/badge/OpenAI-ChatKit-412991)](https://openai.com/)
 
 ---
 
 ## Overview
 
-The **Todo Manager Frontend** is a modern, responsive web application built with Next.js 16+ and the App Router. It provides a beautiful user interface for managing tasks with authentication, real-time search, drag-and-drop kanban board, and comprehensive filtering/sorting capabilities.
+The **Todo Manager Frontend** is a modern, responsive web application built with Next.js 16+ and the App Router. It provides a beautiful user interface for managing tasks with authentication, real-time search, drag-and-drop kanban board, comprehensive filtering/sorting capabilities, and an AI-powered chatbot for natural language task management.
 
 ### Key Features
 
+#### Phase II - Core Features
 - **Next.js 16+ App Router** - Server and client components for optimal performance
 - **TypeScript Strict Mode** - Full type safety throughout the application
 - **Tailwind CSS** - Modern, responsive design with utility-first CSS
 - **Kanban Board** - Drag-and-drop task management with @hello-pangea/dnd
 - **React Query** - Efficient server state management and caching
-- **Better Auth Integration** - Secure authentication (when implemented)
+- **Better Auth Integration** - Secure authentication with JWT cookies
 - **Real-time Search** - Instant search across tasks
 - **Advanced Filtering** - Filter by priority, tags, and status
 - **Task Sorting** - Sort by date, priority, title, or completion status
 - **Responsive Design** - Mobile-first approach, works on all devices
 - **Accessibility** - ARIA labels and semantic HTML
+
+#### Phase III - AI Chatbot Features
+- **AI Chat Interface** - Natural language task management
+- **OpenAI ChatKit** - Pre-built chat UI components
+- **Conversation History** - Persistent chat sessions
+- **Tool Visualization** - See AI tool calls in real-time
+- **Seamless Integration** - Chat uses same JWT authentication
 
 ---
 
@@ -107,6 +116,8 @@ frontend/
 │   │   ├── tasks/                   # Tasks pages
 │   │   │   ├── page.tsx            # Tasks list page
 │   │   │   └── [id]/               # Dynamic task routes
+│   │   ├── chat/                    # AI Chat (Phase III)
+│   │   │   └── page.tsx            # AI chat interface
 │   │   └── api/                     # API routes (if needed)
 │   │
 │   ├── components/                   # Reusable UI components
@@ -312,6 +323,34 @@ npm run test:coverage
 - **By Status:**
   - Incomplete first
   - Complete first
+
+### 5. AI Chat Interface (Phase III)
+
+**Natural Language Task Management:**
+- Create tasks by typing naturally: "Add a task to buy groceries"
+- List tasks: "Show me my high priority tasks"
+- Update tasks: "Mark task 5 as complete"
+- Delete tasks: "Remove the groceries task"
+
+**Chat Features:**
+- Real-time AI responses
+- Conversation history persistence
+- Tool call visualization
+- Loading states during AI processing
+- Error handling with user-friendly messages
+
+**Example Conversations:**
+```
+User: "Create a high priority task for the client meeting tomorrow"
+AI: "✅ I've created a high priority task titled 'Client meeting'
+     with a due date of tomorrow. Would you like to add any notes?"
+
+User: "Show me all my tasks"
+AI: "Here are your tasks:
+     1. Client meeting - High priority - Due tomorrow
+     2. Buy groceries - Medium priority
+     3. Review code - Low priority"
+```
 
 ---
 
@@ -809,14 +848,16 @@ Educational project for learning purposes.
 
 <div align="center">
 
-**Built with Next.js, TypeScript, and Tailwind CSS**
+**Built with Next.js, TypeScript, Tailwind CSS, and OpenAI ChatKit**
 
-**React 19+ | Next.js 16+ | TypeScript 5.9+ | Vitest Testing**
+**React 19+ | Next.js 16+ | TypeScript 5.9+ | AI Chat**
 
-**Status:** Development Ready - 14/14 Tests Passing ✅
+**Phase:** III - AI-Powered Chatbot
 
-**Last Updated:** January 10, 2026
+**Status:** Development Ready ✅
 
-[⬆ Back to Top](#todo-manager-frontend---nextjs)
+**Last Updated:** January 16, 2026
+
+[⬆ Back to Top](#todo-manager-frontend---nextjs--ai-chat)
 
 </div>

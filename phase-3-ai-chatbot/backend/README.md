@@ -1,20 +1,23 @@
-# Todo Manager Backend - FastAPI
+# Todo Manager Backend - FastAPI + AI Chatbot
 
-> RESTful API backend for the Todo Manager application built with FastAPI, SQLModel, and PostgreSQL.
+> RESTful API backend with AI-powered chatbot for the Todo Manager application built with FastAPI, SQLModel, PostgreSQL, and OpenAI.
 
 [![FastAPI](https://img.shields.io/badge/FastAPI-Python_3.13%2B-009688)](https://fastapi.tiangolo.com/)
 [![SQLModel](https://img.shields.io/badge/SQLModel-ORM-blueviolet)](https://sqlmodel.tiangolo.com/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-Neon_Serverless-316192)](https://neon.tech/)
 [![Python](https://img.shields.io/badge/Python-3.13%2B-blue)](https://www.python.org/)
+[![OpenAI](https://img.shields.io/badge/OpenAI-GPT--4o-412991)](https://openai.com/)
+[![MCP](https://img.shields.io/badge/MCP-Tools-orange)](https://modelcontextprotocol.io/)
 
 ---
 
 ## Overview
 
-The **Todo Manager Backend** is a high-performance RESTful API built with FastAPI and Python 3.13+. It provides authentication, task management, and data persistence with a cloud PostgreSQL database. The API follows modern best practices with async/await, type safety, and comprehensive validation.
+The **Todo Manager Backend** is a high-performance RESTful API built with FastAPI and Python 3.13+. It provides authentication, task management, AI-powered chatbot capabilities, and data persistence with a cloud PostgreSQL database. The API follows modern best practices with async/await, type safety, and comprehensive validation.
 
 ### Key Features
 
+#### Phase II - Core Features
 - **FastAPI Framework** - High-performance async web framework
 - **SQLModel ORM** - Type-safe database operations combining SQLAlchemy + Pydantic
 - **JWT Authentication** - Secure token-based authentication
@@ -24,6 +27,14 @@ The **Todo Manager Backend** is a high-performance RESTful API built with FastAP
 - **Pydantic Validation** - Request/response validation
 - **CORS Support** - Configured for frontend integration
 - **Database Migrations** - Alembic for schema management
+
+#### Phase III - AI Chatbot Features
+- **OpenAI Integration** - GPT-4o/GPT-4o-mini for natural language understanding
+- **MCP Tools** - 5 Model Context Protocol tools for task management
+- **Stateless Architecture** - All conversation state persisted to database
+- **Multi-turn Conversations** - Context-aware AI responses with tool calling
+- **User Isolation** - Secure per-user data access with user_id filtering
+- **Conversation History** - Full message persistence and retrieval
 
 ---
 
@@ -102,6 +113,9 @@ CORS_ORIGINS=http://localhost:3000,https://yourfrontend.com
 
 # Optional - Debug mode
 DEBUG=false
+
+# Phase III - AI Chatbot
+OPENAI_API_KEY=sk-your-openai-api-key-here
 ```
 
 ### Environment File Template
@@ -151,6 +165,15 @@ All task endpoints require a valid JWT token in the `Authorization: Bearer <toke
 | `PUT` | `/api/{user_id}/tasks/{id}` | Update task (full update) | Yes |
 | `DELETE` | `/api/{user_id}/tasks/{id}` | Delete task | Yes |
 | `PATCH` | `/api/{user_id}/tasks/{id}/complete` | Toggle completion status | Yes |
+
+### Chat Endpoints (Phase III - Authenticated)
+
+| Method | Endpoint | Description | Auth Required |
+|--------|----------|-------------|---------------|
+| `POST` | `/api/chat/message` | Send chat message to AI assistant | Yes |
+| `GET` | `/api/chat/conversations` | List user's conversations | Yes |
+| `GET` | `/api/chat/conversations/{id}` | Get conversation with messages | Yes |
+| `DELETE` | `/api/chat/conversations/{id}` | Delete a conversation | Yes |
 
 ### Request/Response Examples
 
@@ -221,6 +244,42 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ]
 ```
 
+#### Send Chat Message (Phase III)
+
+**Request:**
+```http
+POST /api/chat/message HTTP/1.1
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Content-Type: application/json
+
+{
+  "message": "Create a high priority task for client presentation tomorrow",
+  "conversation_id": 123
+}
+```
+
+**Response (200 OK):**
+```json
+{
+  "conversation_id": 123,
+  "response": "✅ I've created a high priority task titled 'Client presentation' with a due date of tomorrow. Would you like to add any notes or tags?",
+  "tool_calls": [
+    {
+      "tool": "add_task",
+      "result": {
+        "success": true,
+        "data": {
+          "id": "task-uuid-here",
+          "title": "Client presentation",
+          "priority": "high",
+          "due_date": "2026-01-17"
+        }
+      }
+    }
+  ]
+}
+```
+
 ---
 
 ## Project Structure
@@ -238,7 +297,17 @@ backend/
 │   ├── routers/                   # API route handlers
 │   │   ├── __init__.py
 │   │   ├── auth.py               # Authentication endpoints
-│   │   └── tasks.py              # Task CRUD endpoints
+│   │   ├── tasks.py              # Task CRUD endpoints
+│   │   └── chat.py               # Chat endpoints (Phase III)
+│   │
+│   ├── mcp/                       # MCP Tools (Phase III)
+│   │   ├── __init__.py
+│   │   └── server.py             # 5 MCP tools for task management
+│   │
+│   ├── ai/                        # AI Integration (Phase III)
+│   │   ├── __init__.py
+│   │   ├── agent.py              # OpenAI Agent with tool calling
+│   │   └── prompts.py            # System prompts
 │   │
 │   ├── dependencies/              # FastAPI dependencies
 │   │   ├── __init__.py
@@ -426,13 +495,48 @@ CREATE INDEX idx_tasks_priority ON tasks(priority);
 CREATE INDEX idx_tasks_status ON tasks(status);
 ```
 
+#### Conversations Table (Phase III)
+
+```sql
+CREATE TABLE conversations (
+    id SERIAL PRIMARY KEY,
+    user_id VARCHAR NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    title VARCHAR(200),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    is_active BOOLEAN DEFAULT TRUE
+);
+
+CREATE INDEX idx_conversations_user_id ON conversations(user_id);
+CREATE INDEX idx_conversations_updated_at ON conversations(updated_at DESC);
+```
+
+#### Messages Table (Phase III)
+
+```sql
+CREATE TABLE messages (
+    id SERIAL PRIMARY KEY,
+    conversation_id INTEGER NOT NULL REFERENCES conversations(id) ON DELETE CASCADE,
+    role VARCHAR(20) NOT NULL,  -- 'user', 'assistant', 'system'
+    content TEXT NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_messages_conversation_id ON messages(conversation_id);
+CREATE INDEX idx_messages_created_at ON messages(created_at DESC);
+```
+
 ### Data Relationships
 
 ```
 users (1) ──────< (many) tasks
   │                      │
   └─ One user has many tasks
-                         └─ Each task belongs to one user
+  │                      └─ Each task belongs to one user
+  │
+  └──────< (many) conversations (Phase III)
+                         │
+                         └──────< (many) messages
 ```
 
 ### Connection Pooling
@@ -821,14 +925,16 @@ Educational project for learning purposes.
 
 <div align="center">
 
-**Built with FastAPI, SQLModel, and UV**
+**Built with FastAPI, SQLModel, OpenAI, and UV**
 
-**Python 3.13+ | PostgreSQL | JWT Authentication**
+**Python 3.13+ | PostgreSQL | JWT Authentication | AI Chatbot**
 
-**Status:** Production Ready ✅ - 28/28 Tests Passing
+**Phase:** III - AI-Powered Chatbot
 
-**Last Updated:** January 10, 2026
+**Status:** Production Ready ✅
 
-[⬆ Back to Top](#todo-manager-backend---fastapi)
+**Last Updated:** January 16, 2026
+
+[⬆ Back to Top](#todo-manager-backend---fastapi--ai-chatbot)
 
 </div>
