@@ -5,7 +5,7 @@ A comprehensive 5-phase hackathon project demonstrating full-stack development, 
 [![Phase 1](https://img.shields.io/badge/Phase_1-Complete-brightgreen)](./phase-1-console-app)
 [![Phase 2](https://img.shields.io/badge/Phase_2-Complete-brightgreen)](./phase-2-web-app)
 [![Phase 3](https://img.shields.io/badge/Phase_3-Complete-brightgreen)](./phase-3-ai-chatbot)
-[![Phase 4](https://img.shields.io/badge/Phase_4-Planned-lightgrey)](./phase-4-kubernetes)
+[![Phase 4](https://img.shields.io/badge/Phase_4-In_Progress-yellow)](./phase-4-kubernetes)
 [![Phase 5](https://img.shields.io/badge/Phase_5-Planned-lightgrey)](./phase-5-cloud-deployment)
 
 ## Project Overview
@@ -19,7 +19,7 @@ HackathonII-TODO-APP/
 ├── phase-1-console-app/          # ✅ Phase 1: CLI Application (COMPLETE)
 ├── phase-2-web-app/              # ✅ Phase 2: Web Application (COMPLETE)
 ├── phase-3-ai-chatbot/           # ✅ Phase 3: AI-Powered Chatbot (COMPLETE)
-├── phase-4-kubernetes/           # 📋 Phase 4: Kubernetes Deployment (PLANNED)
+├── phase-4-kubernetes/           # 🚧 Phase 4: Kubernetes Deployment (IN PROGRESS)
 ├── phase-5-cloud-deployment/     # 📋 Phase 5: Cloud Deployment (PLANNED)
 └── README.md                     # This file
 ```
@@ -138,19 +138,37 @@ npm run dev
 
 ---
 
-### Phase 4: Kubernetes Deployment 📋 PLANNED
+### Phase 4: Kubernetes Deployment 🚧 IN PROGRESS
 
-**Technology:** Kubernetes, Helm, Docker
+**Technology:** Kubernetes, Helm, Docker, Next.js 16+, FastAPI, OpenAI GPT-4o
 
-Container orchestration and deployment:
-- Kubernetes manifests
-- Helm charts
-- Service configuration
-- Auto-scaling setup
-- Health checks and monitoring
+Container orchestration and deployment of Phase 3 application:
+- **Codebase:** Full Phase 3 application (AI Chatbot) ready for containerization
+- **Kubernetes Manifests:** Deployments, Services, ConfigMaps structure ready
+- **Helm Charts:** Chart structure prepared for templating
+- **Planned Features:**
+  - Docker containerization (frontend + backend)
+  - Kubernetes deployments with replicas
+  - Service discovery and load balancing
+  - ConfigMaps and Secrets management
+  - Health checks and readiness probes
+  - Horizontal Pod Autoscaling (HPA)
+  - Ingress configuration
 
 **Location:** `phase-4-kubernetes/`
-**Status:** Folder structure created
+**Documentation:** See `phase-4-kubernetes/README.md`
+**Status:** 🚧 Codebase ready, Kubernetes configuration in progress
+
+**Quick Start:**
+```bash
+# Application (same as Phase 3)
+cd phase-4-kubernetes/backend && uv run uvicorn app.main:app --reload
+cd phase-4-kubernetes/frontend && npm run dev
+
+# Kubernetes (coming soon)
+kubectl apply -f phase-4-kubernetes/manifests/
+helm install todo-app phase-4-kubernetes/helm-charts/todo-app/
+```
 
 ---
 
@@ -228,7 +246,7 @@ This is a hackathon project. Each phase has its own development workflow and con
 | Phase 1: Console App | ✅ Complete | 100% | CLI CRUD, 56/56 tests |
 | Phase 2: Web App | ✅ Complete | 100% | Full-stack, 42/42 tests |
 | Phase 3: AI Chatbot | ✅ Complete | 100% | GPT-4o, MCP Tools, Chat UI |
-| Phase 4: Kubernetes | 📋 Planned | 0% | Container orchestration |
+| Phase 4: Kubernetes | 🚧 In Progress | 20% | Codebase ready, K8s config pending |
 | Phase 5: Cloud Deploy | 📋 Planned | 0% | Production deployment |
 
 ## Timeline
@@ -236,7 +254,7 @@ This is a hackathon project. Each phase has its own development workflow and con
 - **Phase 1**: Completed - 2025-12-29 (56/56 tests passing)
 - **Phase 2**: Completed - 2026-01-10 (42/42 tests passing, Production Ready)
 - **Phase 3**: Completed - 2026-01-16 (AI Chatbot with MCP Tools)
-- **Phase 4**: Planned
+- **Phase 4**: In Progress - Started 2026-01-16 (Kubernetes Deployment)
 - **Phase 5**: Planned
 
 ## License
@@ -252,6 +270,6 @@ MIT License - See individual phase directories for specific licensing informatio
 ---
 
 **Last Updated:** 2026-01-16
-**Current Phase:** Phase 3 Complete - Ready for Phase 4
-**Overall Progress:** 60% (3/5 phases complete)
+**Current Phase:** Phase 4 - Kubernetes Deployment (In Progress)
+**Overall Progress:** 64% (3/5 phases complete, 1 in progress)
 **Total Tests:** 98+ tests passing (56 Phase 1 + 42 Phase 2 + Phase 3)
