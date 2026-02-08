@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-config
+  namespace: todoapp
+  labels:
+    app: todo-frontend
+    tier: frontend
+data:
+  # Server-side env var for API proxy routes
+  BACKEND_URL: "http://todo-backend:8000"
+  # Client-side env var (fallback, but not used anymore)
+  NEXT_PUBLIC_API_URL: "http://todo-backend:8000"

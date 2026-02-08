@@ -2576,8 +2576,357 @@ Before submitting Phase III backend code, verify:
 
 ---
 
+## PHASE IV: CONTAINERIZATION
+
+### Dockerfile Location
+
+`docker/backend/Dockerfile`
+
+### Key Requirements
+
+| Requirement | Value |
+|-------------|-------|
+| Base image | `python:3.13-slim` |
+| Install deps | `pip install -r requirements.txt` |
+| User | `appuser` (non-root) |
+| Port | 8000 |
+| Health check | `curl http://localhost:8000/health` |
+
+### Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `DATABASE_URL` | Neon PostgreSQL connection string |
+| `OPENAI_API_KEY` | OpenAI API key for AI chatbot |
+| `BETTER_AUTH_SECRET` | JWT authentication secret |
+| `CORS_ORIGINS` | Allowed CORS origins |
+
+---
+
+## HEALTH CHECK ENDPOINT
+
+Add `/health` endpoint to `main.py` for Kubernetes probes:
+
+```python
+from datetime import datetime
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for Kubernetes liveness/readiness probes."""
+    try:
+        # Test database connection
+        async with get_db() as db:
+            await db.execute(text("SELECT 1"))
+        return {
+            "status": "healthy",
+            "database": "connected",
+            "timestamp": datetime.utcnow().isoformat()
+        }
+    except Exception as e:
+        return JSONResponse(
+            status_code=503,
+            content={
+                "status": "unhealthy",
+                "database": "disconnected",
+                "error": str(e)
+            }
+        )
+```
+
+**Why This Matters:**
+- Kubernetes uses this endpoint for liveness probes (is app running?)
+- Kubernetes uses this for readiness probes (is app ready for traffic?)
+- Returns 503 if database disconnected (pod marked unhealthy)
+
+---
+
+## DOCKER BUILD
+
+### Building the Image
+
+```bash
+# From project root
+docker build -t todo-backend:latest -f docker/backend/Dockerfile ./backend
+
+# For Minikube (IMPORTANT: run this first!)
+eval $(minikube docker-env)
+docker build -t todo-backend:latest -f docker/backend/Dockerfile ./backend
+```
+
+### Testing Locally
+
+```bash
+docker run -p 8000:8000 \
+  -e DATABASE_URL=$DATABASE_URL \
+  -e OPENAI_API_KEY=$OPENAI_API_KEY \
+  -e BETTER_AUTH_SECRET=$BETTER_AUTH_SECRET \
+  -e CORS_ORIGINS=http://localhost:3000 \
+  todo-backend:latest
+```
+
+### Verify Image
+
+```bash
+# Check image size (should be < 500MB)
+docker images todo-backend:latest --format "{{.Size}}"
+
+# Verify non-root user
+docker exec <container-id> whoami
+# Expected: appuser (NOT root)
+
+# Test health endpoint
+curl http://localhost:8000/health
+```
+
+---
+
+## KUBERNETES DEPLOYMENT
+
+### Deployment Manifest
+
+Location: `kubernetes/backend/deployment.yaml`
+
+**Key Settings:**
+
+| Setting | Value |
+|---------|-------|
+| Replicas | 2 |
+| Image | `todo-backend:latest` |
+| imagePullPolicy | `Never` (local image) |
+| Container Port | 8000 |
+
+**Health Probes:**
+
+```yaml
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 8000
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  failureThreshold: 3
+
+readinessProbe:
+  httpGet:
+    path: /health
+    port: 8000
+  initialDelaySeconds: 5
+  periodSeconds: 5
+  failureThreshold: 3
+```
+
+**Resource Limits:**
+
+```yaml
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "250m"
+  limits:
+    memory: "512Mi"
+    cpu: "500m"
+```
+
+### Service Manifest
+
+Location: `kubernetes/backend/service.yaml`
+
+| Setting | Value |
+|---------|-------|
+| Type | `ClusterIP` (internal only) |
+| Port | 8000 |
+| Target Port | 8000 |
+
+**Note:** Backend uses ClusterIP (not exposed externally). Frontend accesses it via `http://todo-backend:8000`.
+
+---
+
+## HELM CHART
+
+### Chart Location
+
+`helm-charts/backend/`
+
+### values.yaml Configuration
+
+```yaml
+replicaCount: 2
+
+image:
+  repository: todo-backend
+  tag: latest
+  pullPolicy: Never
+
+service:
+  type: ClusterIP
+  port: 8000
+
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "250m"
+  limits:
+    memory: "512Mi"
+    cpu: "500m"
+
+env:
+  CORS_ORIGINS: "http://todo-frontend"
+```
+
+### Installing the Chart
+
+```bash
+# Create secrets first (one-time setup)
+kubectl create secret generic backend-secrets \
+  --from-literal=DATABASE_URL=$DATABASE_URL \
+  --from-literal=OPENAI_API_KEY=$OPENAI_API_KEY \
+  --from-literal=BETTER_AUTH_SECRET=$BETTER_AUTH_SECRET
+
+# Install chart
+helm install todo-backend ./helm-charts/backend
+
+# Upgrade after changes
+helm upgrade todo-backend ./helm-charts/backend
+
+# Uninstall
+helm uninstall todo-backend
+```
+
+---
+
+## ENVIRONMENT VARIABLES IN KUBERNETES
+
+### Secret (All Sensitive Variables)
+
+```yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: backend-secrets
+type: Opaque
+stringData:
+  DATABASE_URL: "postgresql://user:pass@ep-xxx.neon.tech/dbname?sslmode=require"
+  OPENAI_API_KEY: "sk-..."
+  BETTER_AUTH_SECRET: "your-jwt-secret"
+```
+
+### ConfigMap (Non-Sensitive)
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+data:
+  CORS_ORIGINS: "http://todo-frontend"
+  LOG_LEVEL: "info"
+```
+
+**Note:** Frontend accesses backend via Kubernetes service DNS: `http://todo-backend:8000`
+
+---
+
+## DATABASE CONNECTION IN KUBERNETES
+
+### Neon Cloud Database (Not Containerized)
+
+Phase IV keeps the database on Neon cloud:
+- No database pods to manage
+- Same connection string as Phase II-III
+- SSL required (`sslmode=require`)
+
+### Connection Flow
+
+```
+Pod (todo-backend)
+    → DATABASE_URL from Secret
+    → Neon PostgreSQL (external)
+```
+
+### Connection Pooling
+
+- SQLAlchemy connection pool works same as local
+- Pool size configured in `database.py`
+- Each pod maintains its own connection pool
+
+### Troubleshooting Database Connection
+
+```bash
+# Check if secret exists
+kubectl get secret backend-secrets
+
+# View pod logs for connection errors
+kubectl logs -l app=todo-backend | grep -i database
+
+# Test connection from pod
+kubectl exec -it <pod-name> -- python -c "
+from app.database import engine
+from sqlalchemy import text
+with engine.connect() as conn:
+    result = conn.execute(text('SELECT 1'))
+    print('Database connected!')
+"
+```
+
+---
+
+## RUNNING THE SERVER (Updated for Phase IV)
+
+### Development (Local)
+
+```bash
+uvicorn app.main:app --reload
+# Access: http://localhost:8000
+# Docs: http://localhost:8000/docs
+```
+
+### Production (Docker)
+
+```bash
+docker run -p 8000:8000 \
+  -e DATABASE_URL=$DATABASE_URL \
+  -e OPENAI_API_KEY=$OPENAI_API_KEY \
+  -e BETTER_AUTH_SECRET=$BETTER_AUTH_SECRET \
+  todo-backend:latest
+# Access: http://localhost:8000
+```
+
+### Production (Kubernetes)
+
+```bash
+# Create secrets (one-time)
+kubectl create secret generic backend-secrets \
+  --from-literal=DATABASE_URL=$DATABASE_URL \
+  --from-literal=OPENAI_API_KEY=$OPENAI_API_KEY \
+  --from-literal=BETTER_AUTH_SECRET=$BETTER_AUTH_SECRET
+
+# Deploy with Helm
+helm install todo-backend ./helm-charts/backend
+
+# Check health
+kubectl exec <pod-name> -- curl -s localhost:8000/health
+```
+
+### Useful Commands
+
+```bash
+# Check pod status
+kubectl get pods -l app=todo-backend
+
+# View logs
+kubectl logs -l app=todo-backend
+
+# Port forward for debugging
+kubectl port-forward svc/todo-backend 8000:8000
+
+# Execute command in pod
+kubectl exec -it <pod-name> -- /bin/sh
+```
+
+---
+
 **Project:** Phase II-III - Full-Stack Web Application with AI Chatbot
 **Backend Stack:** FastAPI + SQLModel + Neon PostgreSQL + OpenAI Agents SDK + MCP
 **Authentication:** JWT with Better Auth Secret
-**Last Updated:** 2026-01-12
-**Status:** Phase III - AI Chatbot Development
+**Last Updated:** 2026-01-21
+**Status:** Phase IV - Kubernetes Containerization & Deployment

@@ -5,7 +5,7 @@ A comprehensive 5-phase hackathon project demonstrating full-stack development, 
 [![Phase 1](https://img.shields.io/badge/Phase_1-Complete-brightgreen)](./phase-1-console-app)
 [![Phase 2](https://img.shields.io/badge/Phase_2-Complete-brightgreen)](./phase-2-web-app)
 [![Phase 3](https://img.shields.io/badge/Phase_3-Complete-brightgreen)](./phase-3-ai-chatbot)
-[![Phase 4](https://img.shields.io/badge/Phase_4-In_Progress-yellow)](./phase-4-kubernetes)
+[![Phase 4](https://img.shields.io/badge/Phase_4-Complete-brightgreen)](./phase-4-kubernetes)
 [![Phase 5](https://img.shields.io/badge/Phase_5-Planned-lightgrey)](./phase-5-cloud-deployment)
 
 ## Project Overview
@@ -19,7 +19,7 @@ HackathonII-TODO-APP/
 ├── phase-1-console-app/          # ✅ Phase 1: CLI Application (COMPLETE)
 ├── phase-2-web-app/              # ✅ Phase 2: Web Application (COMPLETE)
 ├── phase-3-ai-chatbot/           # ✅ Phase 3: AI-Powered Chatbot (COMPLETE)
-├── phase-4-kubernetes/           # 🚧 Phase 4: Kubernetes Deployment (IN PROGRESS)
+├── phase-4-kubernetes/           # ✅ Phase 4: Kubernetes Deployment (COMPLETE)
 ├── phase-5-cloud-deployment/     # 📋 Phase 5: Cloud Deployment (PLANNED)
 └── README.md                     # This file
 ```
@@ -138,36 +138,60 @@ npm run dev
 
 ---
 
-### Phase 4: Kubernetes Deployment 🚧 IN PROGRESS
+### Phase 4: Kubernetes Deployment ✅ COMPLETE
 
-**Technology:** Kubernetes, Helm, Docker, Next.js 16+, FastAPI, OpenAI GPT-4o
+**Technology:** Kubernetes, Minikube, Helm, Docker, Next.js 16+, FastAPI, OpenAI GPT-4o
 
-Container orchestration and deployment of Phase 3 application:
-- **Codebase:** Full Phase 3 application (AI Chatbot) ready for containerization
-- **Kubernetes Manifests:** Deployments, Services, ConfigMaps structure ready
-- **Helm Charts:** Chart structure prepared for templating
-- **Planned Features:**
-  - Docker containerization (frontend + backend)
-  - Kubernetes deployments with replicas
-  - Service discovery and load balancing
-  - ConfigMaps and Secrets management
-  - Health checks and readiness probes
-  - Horizontal Pod Autoscaling (HPA)
-  - Ingress configuration
+Container orchestration and local Kubernetes deployment of Phase 3 AI Chatbot application:
+- **Docker Containerization** - Multi-stage builds for optimized images
+  - Backend: Python 3.13-slim (~500MB)
+  - Frontend: Node 20-alpine (~200MB)
+- **Kubernetes Deployments** - 2 replicas each for HA
+- **Service Discovery** - Frontend → Backend via Kubernetes DNS
+- **Health Probes** - Liveness and readiness checks
+- **Resource Management** - CPU and memory limits
+- **Helm Charts** - Parameterized deployments
+- **Minikube Local Cluster** - Full K8s deployment locally
+- **Non-root Containers** - Security best practices
+- **ConfigMaps & Secrets** - Environment configuration
 
 **Location:** `phase-4-kubernetes/`
 **Documentation:** See `phase-4-kubernetes/README.md`
-**Status:** 🚧 Codebase ready, Kubernetes configuration in progress
+**Status:** ✅ Complete - Running on Minikube
 
-**Quick Start:**
+**Quick Start (Kubernetes):**
 ```bash
-# Application (same as Phase 3)
-cd phase-4-kubernetes/backend && uv run uvicorn app.main:app --reload
-cd phase-4-kubernetes/frontend && npm run dev
+# Start Minikube
+minikube start
 
-# Kubernetes (coming soon)
-kubectl apply -f phase-4-kubernetes/manifests/
-helm install todo-app phase-4-kubernetes/helm-charts/todo-app/
+# Configure Docker for Minikube
+eval $(minikube docker-env)
+
+# Build images
+docker build -t todo-backend:latest -f docker/backend/Dockerfile ./backend
+docker build -t todo-frontend:latest -f docker/frontend/Dockerfile ./frontend
+
+# Create secrets
+kubectl create secret generic backend-secrets \
+  --from-literal=DATABASE_URL=$DATABASE_URL \
+  --from-literal=OPENAI_API_KEY=$OPENAI_API_KEY \
+  --from-literal=BETTER_AUTH_SECRET=$BETTER_AUTH_SECRET
+
+# Deploy with Helm
+helm install todo-backend ./helm-charts/backend
+helm install todo-frontend ./helm-charts/frontend
+
+# Access application
+minikube service todo-frontend
+```
+
+**Quick Start (Local Development):**
+```bash
+# Backend
+cd phase-4-kubernetes/backend && uv run uvicorn app.main:app --reload
+
+# Frontend
+cd phase-4-kubernetes/frontend && npm run dev
 ```
 
 ---
@@ -246,7 +270,7 @@ This is a hackathon project. Each phase has its own development workflow and con
 | Phase 1: Console App | ✅ Complete | 100% | CLI CRUD, 56/56 tests |
 | Phase 2: Web App | ✅ Complete | 100% | Full-stack, 42/42 tests |
 | Phase 3: AI Chatbot | ✅ Complete | 100% | GPT-4o, MCP Tools, Chat UI |
-| Phase 4: Kubernetes | 🚧 In Progress | 20% | Codebase ready, K8s config pending |
+| Phase 4: Kubernetes | ✅ Complete | 100% | Docker + K8s + Helm, Running on Minikube |
 | Phase 5: Cloud Deploy | 📋 Planned | 0% | Production deployment |
 
 ## Timeline
@@ -254,7 +278,7 @@ This is a hackathon project. Each phase has its own development workflow and con
 - **Phase 1**: Completed - 2025-12-29 (56/56 tests passing)
 - **Phase 2**: Completed - 2026-01-10 (42/42 tests passing, Production Ready)
 - **Phase 3**: Completed - 2026-01-16 (AI Chatbot with MCP Tools)
-- **Phase 4**: In Progress - Started 2026-01-16 (Kubernetes Deployment)
+- **Phase 4**: Completed - 2026-02-09 (Kubernetes Deployment with Minikube + Helm)
 - **Phase 5**: Planned
 
 ## License
@@ -269,7 +293,8 @@ MIT License - See individual phase directories for specific licensing informatio
 
 ---
 
-**Last Updated:** 2026-01-16
-**Current Phase:** Phase 4 - Kubernetes Deployment (In Progress)
-**Overall Progress:** 64% (3/5 phases complete, 1 in progress)
+**Last Updated:** 2026-02-09
+**Current Phase:** Phase 4 - Kubernetes Deployment (COMPLETE ✅)
+**Overall Progress:** 80% (4/5 phases complete)
 **Total Tests:** 98+ tests passing (56 Phase 1 + 42 Phase 2 + Phase 3)
+**Deployment Status:** Running on Minikube with 4 pods (2 frontend + 2 backend)

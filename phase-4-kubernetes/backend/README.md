@@ -808,9 +808,111 @@ FastAPI automatically generates interactive API documentation:
 
 ---
 
+## Phase IV: Kubernetes Deployment
+
+### Docker Containerization
+
+The backend is containerized using Docker for deployment to Kubernetes:
+
+**Dockerfile Location:** `docker/backend/Dockerfile`
+
+**Key Features:**
+- Multi-stage build for optimized image size
+- Python 3.13-slim base image
+- Non-root user (`appuser`) for security
+- Image size: ~500MB
+- Health check endpoint at `/health`
+
+**Building the Image:**
+
+```bash
+# Configure Docker to use Minikube's daemon (IMPORTANT!)
+eval $(minikube docker-env)
+
+# Build image
+docker build -t todo-backend:latest -f docker/backend/Dockerfile ./backend
+
+# Test locally
+docker run -p 8000:8000 \
+  -e DATABASE_URL=$DATABASE_URL \
+  -e OPENAI_API_KEY=$OPENAI_API_KEY \
+  -e BETTER_AUTH_SECRET=$BETTER_AUTH_SECRET \
+  todo-backend:latest
+```
+
+### Kubernetes Deployment
+
+**Deployment Configuration:**
+- Location: `kubernetes/backend/deployment.yaml`
+- Replicas: 2 pods
+- Image pull policy: `Never` (local images)
+- Resource limits: 512Mi memory, 500m CPU
+
+**Service Configuration:**
+- Location: `kubernetes/backend/service.yaml`
+- Type: `ClusterIP` (internal only)
+- Port: 8000
+
+**Health Probes:**
+```yaml
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 8000
+  initialDelaySeconds: 30
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /health
+    port: 8000
+  initialDelaySeconds: 5
+  periodSeconds: 5
+```
+
+**Deploy with Helm:**
+
+```bash
+# Create secrets (one-time)
+kubectl create secret generic backend-secrets \
+  --from-literal=DATABASE_URL=$DATABASE_URL \
+  --from-literal=OPENAI_API_KEY=$OPENAI_API_KEY \
+  --from-literal=BETTER_AUTH_SECRET=$BETTER_AUTH_SECRET
+
+# Install Helm chart
+helm install todo-backend ./helm-charts/backend
+
+# Check status
+kubectl get pods -l app=todo-backend
+kubectl logs -l app=todo-backend
+```
+
+**Access Methods:**
+- Internal: `http://todo-backend:8000` (from frontend pods)
+- Port Forward: `kubectl port-forward svc/todo-backend 8000:8000`
+- Health Check: `kubectl exec <pod> -- curl -s localhost:8000/health`
+
+### Database Connection in Kubernetes
+
+The backend connects to Neon PostgreSQL cloud database (not containerized):
+
+**Connection:**
+- DATABASE_URL stored in Kubernetes Secret
+- SSL required (`sslmode=require`)
+- Same connection pooling as local development
+- Each pod maintains its own connection pool
+
+**Benefits:**
+- No database pods to manage
+- Auto-scaling with Neon
+- Same data as Phase II-III
+- Backup and recovery handled by Neon
+
+---
+
 ## Deployment
 
-### Production Configuration
+### Local Development
 
 **Environment Variables:**
 ```bash
@@ -929,11 +1031,11 @@ Educational project for learning purposes.
 
 **Python 3.13+ | PostgreSQL | JWT Authentication | AI Chatbot**
 
-**Phase:** III - AI-Powered Chatbot
+**Phase:** IV - Kubernetes Deployment
 
-**Status:** Production Ready ✅
+**Status:** Production Ready + Containerized ✅
 
-**Last Updated:** January 16, 2026
+**Last Updated:** February 9, 2026
 
 [⬆ Back to Top](#todo-manager-backend---fastapi--ai-chatbot)
 

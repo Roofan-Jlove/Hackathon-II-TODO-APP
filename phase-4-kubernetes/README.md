@@ -14,22 +14,83 @@
 
 ## Overview
 
-**Phase III** extends the Phase II web application with an AI-powered chatbot that allows users to manage their tasks through natural language conversations. The chatbot uses OpenAI's GPT-4o model with Model Context Protocol (MCP) tools to create, read, update, and delete tasks.
+**Phase IV** containerizes the Phase III AI-powered chatbot application and deploys it to a local Kubernetes cluster using Minikube. The application runs in Docker containers orchestrated by Kubernetes with proper health checks, resource limits, and service discovery.
 
-### What's New in Phase III
+### What's New in Phase IV
+
+- **Docker Containerization** - Multi-stage builds for optimized images
+- **Kubernetes Deployment** - 2 replicas each for frontend and backend
+- **Helm Charts** - Parameterized deployments with values files
+- **Service Discovery** - Frontend communicates with backend via Kubernetes DNS
+- **Health Probes** - Liveness and readiness checks for automatic recovery
+- **Resource Management** - CPU and memory limits for pod scheduling
+- **Minikube Local Cluster** - Full Kubernetes deployment running locally
+
+### Phase III Features (Retained)
 
 - **AI Chatbot Interface** - Conversational task management
 - **Natural Language Processing** - Create tasks by simply describing them
 - **5 MCP Tools** - add_task, list_tasks, update_task, complete_task, delete_task
 - **Stateless Architecture** - All conversation state persisted to database
 - **Multi-turn Conversations** - Context-aware AI responses
-- **Tool Call Visualization** - See what the AI is doing in real-time
 
 ---
 
 ## Architecture
 
-### System Overview
+### Kubernetes Deployment Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                      Minikube Cluster                            │
+│                                                                  │
+│  ┌─────────────────────┐       ┌─────────────────────┐         │
+│  │   todo-frontend     │       │   todo-backend      │         │
+│  │   (Deployment)      │       │   (Deployment)      │         │
+│  │   Replicas: 2       │       │   Replicas: 2       │         │
+│  │                     │       │                     │         │
+│  │  ┌─────────────┐   │       │  ┌─────────────┐   │         │
+│  │  │  Pod (Next) │   │  HTTP │  │ Pod (FastAPI)│   │         │
+│  │  │  Port 3000  │───┼──────►│  │  Port 8000  │   │         │
+│  │  └─────────────┘   │       │  └─────────────┘   │         │
+│  │  ┌─────────────┐   │       │  ┌─────────────┐   │         │
+│  │  │  Pod (Next) │   │       │  │ Pod (FastAPI)│   │         │
+│  │  │  Port 3000  │   │       │  │  Port 8000  │   │         │
+│  │  └─────────────┘   │       │  └─────────────┘   │         │
+│  └─────────────────────┘       └─────────────────────┘         │
+│           │                             │                       │
+│           │ NodePort                    │ ClusterIP             │
+│           ▼                             ▼                       │
+│  ┌─────────────────────┐       ┌─────────────────────┐         │
+│  │  frontend-service   │       │  backend-service    │         │
+│  │  (NodePort)         │       │  (ClusterIP)        │         │
+│  │  Port: 30789        │       │  Port: 8000         │         │
+│  └─────────────────────┘       └─────────────────────┘         │
+│           │                             │                       │
+└───────────┼─────────────────────────────┼───────────────────────┘
+            │                             │
+            │ minikube service            │
+            │ (tunnel)                    │
+            ▼                             ▼
+    Browser Access              ┌───────────────────────┐
+    http://127.0.0.1:51399      │   Neon PostgreSQL     │
+                                │   (External Cloud)    │
+                                │                       │
+                                │   ┌───────────────┐   │
+                                │   │  OpenAI API   │   │
+                                │   │  (GPT-4o)     │   │
+                                │   └───────────────┘   │
+                                └───────────────────────┘
+```
+
+### Container Images
+
+| Component | Image | Base | Size | User |
+|-----------|-------|------|------|------|
+| Frontend | `todo-frontend:latest` | node:20-alpine | ~200MB | nextjs |
+| Backend | `todo-backend:latest` | python:3.13-slim | ~500MB | appuser |
+
+### System Overview (Traditional)
 
 ```
 ┌─────────────────┐         ┌─────────────────┐         ┌─────────────────┐
@@ -119,68 +180,95 @@
 
 ### Prerequisites
 
+**Phase IV (Kubernetes):**
+- **Docker Desktop** ([Download](https://www.docker.com/products/docker-desktop))
+- **Minikube** ([Install](https://minikube.sigs.k8s.io/docs/start/))
+- **kubectl** ([Install](https://kubernetes.io/docs/tasks/tools/))
+- **Helm** ([Install](https://helm.sh/docs/intro/install/))
+- **Neon PostgreSQL** (cloud database)
+- **OpenAI API Key** ([Get one](https://platform.openai.com/))
+
+**Local Development:**
 - **Node.js** 18.x or higher
 - **Python** 3.13 or higher
 - **UV** Package Manager ([Install](https://docs.astral.sh/uv/))
-- **PostgreSQL** (Neon Serverless recommended)
-- **OpenAI API Key** ([Get one](https://platform.openai.com/))
 
 ### Installation
 
-#### 1. Clone the Repository
+#### Option 1: Kubernetes Deployment (Phase IV - Recommended)
 
 ```bash
+# 1. Clone repository
 git clone https://github.com/Roofan-Jlove/Hackathon-II-TODO-APP.git
-cd Hackathon-II-TODO-APP/phase-3-ai-chatbot
+cd Hackathon-II-TODO-APP/phase-4-kubernetes
+
+# 2. Start Minikube
+minikube start
+
+# 3. Configure Docker to use Minikube's daemon
+eval $(minikube docker-env)
+
+# 4. Build Docker images
+docker build -t todo-backend:latest -f docker/backend/Dockerfile ./backend
+docker build -t todo-frontend:latest -f docker/frontend/Dockerfile ./frontend
+
+# 5. Create Kubernetes secrets
+kubectl create secret generic backend-secrets \
+  --from-literal=DATABASE_URL="postgresql://..." \
+  --from-literal=OPENAI_API_KEY="sk-..." \
+  --from-literal=BETTER_AUTH_SECRET="your-secret"
+
+# 6. Deploy with Helm
+helm install todo-backend ./helm-charts/backend
+helm install todo-frontend ./helm-charts/frontend
+
+# 7. Check deployment status
+kubectl get pods
+
+# 8. Access the application
+minikube service todo-frontend
+# Opens browser automatically!
 ```
 
-#### 2. Set Up Backend
+**Verify Deployment:**
+```bash
+# Check all pods are running
+kubectl get pods
+
+# Expected output:
+# NAME                             READY   STATUS    RESTARTS
+# todo-backend-xxx-xxx             1/1     Running   0
+# todo-backend-xxx-xxx             1/1     Running   0
+# todo-frontend-xxx-xxx            1/1     Running   0
+# todo-frontend-xxx-xxx            1/1     Running   0
+```
+
+#### Option 2: Local Development (Traditional)
 
 ```bash
+# 1. Clone repository
+git clone https://github.com/Roofan-Jlove/Hackathon-II-TODO-APP.git
+cd Hackathon-II-TODO-APP/phase-4-kubernetes
+
+# 2. Set Up Backend
 cd backend
-
-# Install dependencies
 uv sync
-
-# Configure environment
 cp .env.example .env
-# Edit .env with your credentials:
-# - DATABASE_URL (Neon PostgreSQL)
-# - BETTER_AUTH_SECRET (JWT secret)
-# - OPENAI_API_KEY (OpenAI API key)
-# - CORS_ORIGINS (frontend URL)
-
-# Run the backend server
+# Edit .env with your credentials
 uv run uvicorn app.main:app --reload
-```
 
-Backend: **http://localhost:8000**
-API Docs: **http://localhost:8000/docs**
-
-#### 3. Set Up Frontend
-
-```bash
+# 3. Set Up Frontend (separate terminal)
 cd ../frontend
-
-# Install dependencies
 npm install
-
-# Configure environment
 cp .env.example .env.local
 # Edit .env.local with backend URL
-
-# Run the frontend server
 npm run dev
+
+# 4. Access Application
+# Frontend: http://localhost:3000
+# Backend: http://localhost:8000
+# API Docs: http://localhost:8000/docs
 ```
-
-Frontend: **http://localhost:3000**
-
-#### 4. Access the Application
-
-1. Open **http://localhost:3000** in your browser
-2. Sign up or log in
-3. Navigate to the **Chat** page
-4. Start chatting with the AI assistant!
 
 ---
 
@@ -240,6 +328,111 @@ The AI uses these 5 tools to manage tasks:
 | `delete_task` | Delete a task permanently | task_id |
 
 **Security Note:** All tools automatically receive the `user_id` from JWT authentication and filter database queries accordingly.
+
+---
+
+## Kubernetes Features (Phase IV)
+
+### Containerization
+
+**Backend Image:**
+- Base: `python:3.13-slim`
+- Multi-stage build for optimization
+- Non-root user: `appuser`
+- Size: ~500MB
+- Health endpoint: `/health`
+
+**Frontend Image:**
+- Base: `node:20-alpine`
+- Next.js standalone output
+- Non-root user: `nextjs`
+- Size: ~200MB
+- Production optimized
+
+### High Availability
+
+**Deployment Strategy:**
+- 2 replicas for frontend (load balanced)
+- 2 replicas for backend (load balanced)
+- Rolling updates (zero downtime)
+- Automatic pod restarts on failure
+
+**Resource Management:**
+```yaml
+# Frontend pods
+requests:
+  memory: "128Mi"
+  cpu: "100m"
+limits:
+  memory: "256Mi"
+  cpu: "200m"
+
+# Backend pods
+requests:
+  memory: "256Mi"
+  cpu: "250m"
+limits:
+  memory: "512Mi"
+  cpu: "500m"
+```
+
+### Health Monitoring
+
+**Liveness Probes:**
+- Checks if pods are running
+- Restarts pod if probe fails
+- HTTP GET to health endpoint
+
+**Readiness Probes:**
+- Checks if pods are ready for traffic
+- Removes from service if not ready
+- Database connectivity check
+
+### Service Discovery
+
+**Internal Communication:**
+- Frontend → Backend: `http://todo-backend:8000`
+- Kubernetes DNS resolves service names
+- Automatic load balancing across pods
+
+**External Access:**
+- Frontend: NodePort service (via Minikube tunnel)
+- Backend: ClusterIP (internal only)
+- Managed by `minikube service todo-frontend`
+
+### Configuration Management
+
+**ConfigMaps (Non-sensitive):**
+- `NEXT_PUBLIC_API_URL=http://todo-backend:8000`
+- `CORS_ORIGINS=http://todo-frontend`
+
+**Secrets (Sensitive):**
+- `DATABASE_URL` (Neon PostgreSQL)
+- `OPENAI_API_KEY` (OpenAI API)
+- `BETTER_AUTH_SECRET` (JWT authentication)
+
+### Helm Charts
+
+**Parameterized Deployments:**
+- `values.yaml` for environment-specific configs
+- Templated manifests for reusability
+- Easy upgrades: `helm upgrade todo-backend ./helm-charts/backend`
+
+**Chart Structure:**
+```
+helm-charts/
+├── backend/
+│   ├── Chart.yaml          # Chart metadata
+│   ├── values.yaml         # Default values
+│   └── templates/
+│       ├── deployment.yaml
+│       ├── service.yaml
+│       └── configmap.yaml
+└── frontend/
+    ├── Chart.yaml
+    ├── values.yaml
+    └── templates/
+```
 
 ---
 
@@ -516,11 +709,11 @@ Educational project for learning purposes.
 
 **Built with Next.js, FastAPI, OpenAI, and Claude Code**
 
-**Phase III - AI-Powered Chatbot**
+**Phase IV - Local Kubernetes Deployment**
 
-**Status:** Development Complete ✅
+**Status:** Deployment Complete ✅
 
-**Last Updated:** January 16, 2026
+**Last Updated:** February 9, 2026
 
 [⬆ Back to Top](#todo-manager---phase-iii-ai-powered-chatbot)
 

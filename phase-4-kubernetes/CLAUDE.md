@@ -1,17 +1,17 @@
-# Claude Code Navigation Guide - Phase II-III Web Application
+# Claude Code Navigation Guide - Phase II-IV Web Application
 
-This document serves as the main navigation guide for Claude Code when working with the **Phase II-III: Full-Stack Web Application with AI Chatbot** todo manager project.
+This document serves as the main navigation guide for Claude Code when working with the **Phase II-IV: Full-Stack Web Application with AI Chatbot & Kubernetes Deployment** todo manager project.
 
 ## 1. PROJECT OVERVIEW
 
-**Name:** Todo Manager - Phase II-III Web Application with AI Chatbot
-**Type:** Full-Stack Web Application (Next.js + FastAPI) + AI Chatbot
-**Architecture:** Monorepo with separate frontend and backend
+**Name:** Todo Manager - Phase II-IV Web Application with AI Chatbot & Kubernetes
+**Type:** Full-Stack Web Application (Next.js + FastAPI) + AI Chatbot + Kubernetes Deployment
+**Architecture:** Monorepo with separate frontend and backend, containerized for Kubernetes
 **Development Framework:** SpecKit Plus (Spec-Driven Development)
-**Status:** Phase III - AI Chatbot Development
+**Status:** Phase IV - Local Kubernetes Deployment
 
 ### Purpose
-A modern, full-featured todo management web application with user authentication, real-time updates, and cloud database persistence. Phase II transitions from the CLI application (Phase I) to a production-ready web application. **Phase III adds AI-powered chatbot using OpenAI Agents SDK and MCP tools**, enabling users to manage tasks through natural language conversations.
+A modern, full-featured todo management web application with user authentication, real-time updates, and cloud database persistence. Phase II transitions from the CLI application (Phase I) to a production-ready web application. **Phase III adds AI-powered chatbot using OpenAI Agents SDK and MCP tools**, enabling users to manage tasks through natural language conversations. **Phase IV deploys the chatbot to local Kubernetes using Docker, Minikube, and Helm.**
 
 ### Technology Stack
 
@@ -43,6 +43,14 @@ A modern, full-featured todo management web application with user authentication
 - SpecKit Plus (Specification framework)
 - UV (Python package manager)
 - Claude Code (AI-powered development)
+
+**Infrastructure (Phase IV):**
+- Docker Desktop (Containerization)
+- Minikube (Local Kubernetes cluster)
+- Helm (Kubernetes package manager)
+- kubectl (Kubernetes CLI)
+- kubectl-ai (AI-assisted Kubernetes operations)
+- Docker AI / Gordon (AI-assisted Docker operations)
 
 ---
 
@@ -422,7 +430,7 @@ If requirements change during implementation:
 ## 4. PROJECT STRUCTURE
 
 ```
-phase-2-web-app/
+phase-4-kubernetes/
 ├── frontend/                      # Next.js Frontend
 │   ├── src/
 │   │   ├── app/                  # App Router (pages, layouts, API routes)
@@ -451,9 +459,39 @@ phase-2-web-app/
 │   ├── requirements.txt
 │   └── CLAUDE.md                # Backend-specific guide
 │
+├── docker/                       # Docker configurations (Phase IV)
+│   ├── frontend/
+│   │   ├── Dockerfile           # Frontend container image
+│   │   └── .dockerignore        # Frontend build exclusions
+│   └── backend/
+│       ├── Dockerfile           # Backend container image
+│       └── .dockerignore        # Backend build exclusions
+│
+├── kubernetes/                   # Kubernetes manifests (Phase IV)
+│   ├── frontend/
+│   │   ├── deployment.yaml      # Frontend Deployment
+│   │   ├── service.yaml         # Frontend Service
+│   │   └── configmap.yaml       # Frontend ConfigMap
+│   └── backend/
+│       ├── deployment.yaml      # Backend Deployment
+│       ├── service.yaml         # Backend Service
+│       ├── configmap.yaml       # Backend ConfigMap
+│       └── secret.yaml          # Backend Secrets (template)
+│
+├── helm-charts/                  # Helm charts (Phase IV)
+│   ├── frontend/
+│   │   ├── Chart.yaml           # Chart metadata
+│   │   ├── values.yaml          # Default values
+│   │   └── templates/           # K8s templates
+│   └── backend/
+│       ├── Chart.yaml           # Chart metadata
+│       ├── values.yaml          # Default values
+│       └── templates/           # K8s templates
+│
 ├── specs/                        # SpecKit Plus specifications
 │   ├── overview.md
 │   ├── features/
+│   │   └── containerization-*.md # Phase IV specs
 │   ├── api/
 │   ├── database/
 │   └── ui/
@@ -692,6 +730,130 @@ cd frontend && npm run dev
 # 4. Verify error message displayed
 ```
 
+### Phase IV Features (Kubernetes Deployment)
+
+For containerizing and deploying to local Kubernetes, follow this workflow:
+
+### Step 1: Read Phase IV Specifications
+```bash
+# Read containerization specs
+@specs/features/containerization-*.md
+
+# Read agent behavior rules for Phase IV
+@AGENTS.md (Section 12 - Phase IV Rules)
+```
+
+### Step 2: Create Dockerfiles
+```bash
+# Create frontend Dockerfile
+@docker/frontend/Dockerfile
+
+# Create backend Dockerfile
+@docker/backend/Dockerfile
+
+# CRITICAL Requirements (from AGENTS.md):
+# - Multi-stage builds for optimization
+# - Official base images (node:alpine, python:slim)
+# - Non-root user (never run as root)
+# - No secrets in images
+# - Image size < 500MB backend, < 200MB frontend
+```
+
+### Step 3: Build and Test Images Locally
+```bash
+# Configure Docker to use Minikube's daemon
+eval $(minikube docker-env)
+
+# Build images
+docker build -t todo-frontend:latest -f docker/frontend/Dockerfile ./frontend
+docker build -t todo-backend:latest -f docker/backend/Dockerfile ./backend
+
+# Test containers locally
+docker run -p 3000:3000 todo-frontend:latest
+docker run -p 8000:8000 todo-backend:latest
+
+# Verify non-root user
+docker exec <container> whoami  # Should NOT be "root"
+```
+
+### Step 4: Create Kubernetes Manifests
+```bash
+# Create frontend manifests
+@kubernetes/frontend/deployment.yaml
+@kubernetes/frontend/service.yaml
+@kubernetes/frontend/configmap.yaml
+
+# Create backend manifests
+@kubernetes/backend/deployment.yaml
+@kubernetes/backend/service.yaml
+@kubernetes/backend/configmap.yaml
+@kubernetes/backend/secret.yaml
+
+# CRITICAL Requirements (from AGENTS.md):
+# - Resource requests and limits defined
+# - Liveness and readiness probes
+# - ConfigMaps for non-sensitive config
+# - Secrets for sensitive data (DATABASE_URL, OPENAI_API_KEY)
+# - Standard Kubernetes labels
+```
+
+### Step 5: Create Helm Charts
+```bash
+# Create frontend Helm chart
+@helm-charts/frontend/Chart.yaml
+@helm-charts/frontend/values.yaml
+@helm-charts/frontend/templates/
+
+# Create backend Helm chart
+@helm-charts/backend/Chart.yaml
+@helm-charts/backend/values.yaml
+@helm-charts/backend/templates/
+
+# Validate charts
+helm lint ./helm-charts/frontend
+helm lint ./helm-charts/backend
+```
+
+### Step 6: Deploy to Minikube
+```bash
+# Start Minikube (if not running)
+minikube start
+
+# Deploy using Helm
+helm install todo-frontend ./helm-charts/frontend
+helm install todo-backend ./helm-charts/backend
+
+# Verify deployment
+kubectl get pods
+kubectl get services
+```
+
+### Step 7: Verify Deployment
+```bash
+# Check pods are running
+kubectl get pods -l app=todo-frontend
+kubectl get pods -l app=todo-backend
+
+# Check health probes pass
+kubectl describe pod <pod-name>
+
+# View logs
+kubectl logs -l app=todo-backend
+
+# Access application
+minikube service todo-frontend
+```
+
+### Step 8: End-to-End Testing (Phase IV)
+```bash
+# Test full application flow:
+# 1. Frontend loads in browser
+# 2. User can register/login
+# 3. User can create/list tasks via UI
+# 4. AI chatbot responds correctly
+# 5. Data persists across pod restarts
+```
+
 ---
 
 ## 7. COMMANDS
@@ -803,6 +965,95 @@ docker-compose up --build
 docker-compose logs -f
 ```
 
+### Phase IV: Docker Commands
+```bash
+# Configure Docker to use Minikube's daemon (IMPORTANT!)
+eval $(minikube docker-env)
+
+# Build frontend image
+docker build -t todo-frontend:latest -f docker/frontend/Dockerfile ./frontend
+
+# Build backend image
+docker build -t todo-backend:latest -f docker/backend/Dockerfile ./backend
+
+# Using Docker AI (Gordon) - if available
+docker ai "build the frontend image from docker/frontend/"
+docker ai "build the backend image from docker/backend/"
+docker ai "optimize this Dockerfile for smaller image size"
+docker ai "why is my container failing to start?"
+
+# Test containers locally
+docker run -d -p 3000:3000 --name test-frontend todo-frontend:latest
+docker run -d -p 8000:8000 --name test-backend todo-backend:latest
+
+# Verify image sizes
+docker images todo-frontend:latest --format "{{.Size}}"
+docker images todo-backend:latest --format "{{.Size}}"
+
+# Verify non-root user
+docker exec test-backend whoami
+
+# Cleanup test containers
+docker stop test-frontend test-backend
+docker rm test-frontend test-backend
+```
+
+### Phase IV: Kubernetes Commands
+```bash
+# Start Minikube
+minikube start
+
+# Check cluster status
+minikube status
+kubectl cluster-info
+
+# Deploy with raw manifests
+kubectl apply -f kubernetes/backend/
+kubectl apply -f kubernetes/frontend/
+
+# Deploy with Helm
+helm install todo-backend ./helm-charts/backend
+helm install todo-frontend ./helm-charts/frontend
+
+# Check deployment status
+kubectl get pods
+kubectl get services
+kubectl get deployments
+
+# View pod logs
+kubectl logs -l app=todo-backend
+kubectl logs -l app=todo-frontend --tail=100
+
+# Describe pod (for debugging)
+kubectl describe pod <pod-name>
+
+# Access application
+minikube service todo-frontend
+
+# Port forward for local testing
+kubectl port-forward svc/todo-backend 8000:8000
+kubectl port-forward svc/todo-frontend 3000:3000
+
+# Using kubectl-ai - if available
+kubectl-ai "deploy the frontend with 2 replicas"
+kubectl-ai "check if all pods are running"
+kubectl-ai "get the URL to access the frontend"
+kubectl-ai "show me logs of the backend pods"
+kubectl-ai "why are my pods in CrashLoopBackOff?"
+kubectl-ai "diagnose pod issues"
+
+# Helm management
+helm list
+helm upgrade todo-backend ./helm-charts/backend
+helm rollback todo-backend 1
+helm uninstall todo-backend
+
+# Cleanup
+kubectl delete -f kubernetes/
+helm uninstall todo-frontend todo-backend
+minikube stop
+```
+
 ### Full Stack Development
 ```bash
 # Terminal 1: Backend
@@ -897,6 +1148,13 @@ When referencing files in this project, use the `@` notation:
 | Find MCP tools spec | `@speckit.specify` (Section 6) |
 | Find implementation plan | `@speckit.plan` |
 | Find Phase III rules | `@AGENTS.md` (Section 11) |
+| Find Phase IV rules | `@AGENTS.md` (Section 12) |
+| Build Docker images | `docker build -t todo-backend:latest ...` |
+| Deploy to Kubernetes | `helm install todo-backend ./helm-charts/backend` |
+| Check pod status | `kubectl get pods` |
+| View pod logs | `kubectl logs -l app=todo-backend` |
+| Access application | `minikube service todo-frontend` |
+| Troubleshoot pods | `kubectl-ai "diagnose pod issues"` |
 
 ---
 
@@ -1106,14 +1364,265 @@ async def add_task(
 
 ---
 
-## 10. Getting Started
+## 10. PHASE IV: LOCAL KUBERNETES DEPLOYMENT
+
+Phase IV containerizes the application and deploys it to a local Kubernetes cluster using Minikube.
+
+### Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                      Minikube Cluster                            │
+│                                                                  │
+│  ┌─────────────────────┐       ┌─────────────────────┐         │
+│  │   todo-frontend     │       │   todo-backend      │         │
+│  │   (Deployment)      │       │   (Deployment)      │         │
+│  │                     │       │                     │         │
+│  │  ┌─────────────┐   │       │  ┌─────────────┐   │         │
+│  │  │  Pod (Next) │   │  HTTP │  │ Pod (FastAPI)│   │         │
+│  │  │  Port 3000  │───┼──────►│  │  Port 8000  │   │         │
+│  │  └─────────────┘   │       │  └─────────────┘   │         │
+│  └─────────────────────┘       └─────────────────────┘         │
+│           │                             │                       │
+│           │ NodePort                    │ ClusterIP             │
+│           ▼                             ▼                       │
+│  ┌─────────────────────┐       ┌─────────────────────┐         │
+│  │  frontend-service   │       │  backend-service    │         │
+│  │  (NodePort)         │       │  (ClusterIP)        │         │
+│  └─────────────────────┘       └─────────────────────┘         │
+│                                         │                       │
+└─────────────────────────────────────────┼───────────────────────┘
+                                          │
+                                          ▼
+                              ┌───────────────────────┐
+                              │   Neon PostgreSQL     │
+                              │   (External Cloud)    │
+                              └───────────────────────┘
+```
+
+### Technology Stack (Phase IV)
+
+**Containerization:**
+- Docker Desktop - Container runtime and image building
+- Multi-stage Dockerfiles - Optimized production images
+- Non-root containers - Security best practice
+
+**Kubernetes:**
+- Minikube - Local Kubernetes cluster
+- kubectl - Kubernetes CLI
+- Helm - Package manager for Kubernetes
+
+**AI-Assisted Operations:**
+- kubectl-ai - Natural language Kubernetes commands
+- Docker AI (Gordon) - Natural language Docker operations
+
+### Key Components
+
+**Dockerfiles:**
+- `docker/frontend/Dockerfile` - Next.js production image (~200MB)
+- `docker/backend/Dockerfile` - FastAPI production image (~500MB)
+- Multi-stage builds for optimization
+- Non-root user for security
+
+**Kubernetes Manifests:**
+- `kubernetes/frontend/` - Frontend Deployment, Service, ConfigMap
+- `kubernetes/backend/` - Backend Deployment, Service, ConfigMap, Secret
+- Resource limits and requests defined
+- Liveness and readiness probes
+
+**Helm Charts:**
+- `helm-charts/frontend/` - Parameterized frontend deployment
+- `helm-charts/backend/` - Parameterized backend deployment
+- Environment-specific values files
+
+### Health Check Endpoints
+
+Backend must expose health endpoints for Kubernetes probes:
+
+```python
+# backend/app/routers/health.py
+@router.get("/health")
+async def health_check():
+    """Liveness probe - is the app running?"""
+    return {"status": "healthy"}
+
+@router.get("/ready")
+async def readiness_check(db: AsyncSession = Depends(get_db)):
+    """Readiness probe - is the app ready to serve traffic?"""
+    # Check database connection
+    await db.execute(text("SELECT 1"))
+    return {"status": "ready"}
+```
+
+Frontend health endpoint (Next.js API route):
+
+```typescript
+// frontend/src/app/api/health/route.ts
+export async function GET() {
+  return Response.json({ status: "healthy" });
+}
+```
+
+---
+
+## 11. PHASE IV IMPORTANT NOTES
+
+### Minikube Docker Environment (CRITICAL)
+
+**All images must be built in Minikube's Docker daemon:**
+
+```bash
+# ALWAYS run this before building images
+eval $(minikube docker-env)
+
+# Now build images - they'll be available in Minikube
+docker build -t todo-frontend:latest -f docker/frontend/Dockerfile ./frontend
+docker build -t todo-backend:latest -f docker/backend/Dockerfile ./backend
+```
+
+**Why This Matters:**
+- Minikube runs its own Docker daemon inside a VM/container
+- Images built in your local Docker are NOT visible to Minikube
+- `imagePullPolicy: Never` requires images to exist in Minikube's daemon
+- Without this step, pods will fail with `ImagePullBackOff`
+
+### imagePullPolicy Configuration
+
+**All deployments must use `imagePullPolicy: Never`:**
+
+```yaml
+# kubernetes/backend/deployment.yaml
+spec:
+  containers:
+  - name: backend
+    image: todo-backend:latest
+    imagePullPolicy: Never  # ✅ CRITICAL - images are local
+```
+
+**Why This Matters:**
+- Default policy tries to pull from Docker Hub
+- Our images are local (not in any registry)
+- `Never` tells Kubernetes to use local images only
+
+### Database Connection
+
+**Database remains on Neon cloud (not containerized):**
+
+```yaml
+# kubernetes/backend/secret.yaml
+apiVersion: v1
+kind: Secret
+metadata:
+  name: backend-secrets
+type: Opaque
+stringData:
+  DATABASE_URL: "postgresql://user:pass@ep-xxx.us-east-2.aws.neon.tech/dbname?sslmode=require"
+```
+
+**Why This Matters:**
+- Neon provides serverless PostgreSQL with auto-scaling
+- No need to manage database in Kubernetes
+- Same database as Phase II/III (data continuity)
+- SSL required for cloud database connection
+
+### Service Communication
+
+**Frontend talks to backend via Kubernetes service name:**
+
+```typescript
+// frontend environment variable
+NEXT_PUBLIC_API_URL=http://todo-backend:8000
+
+// Or via ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: frontend-config
+data:
+  NEXT_PUBLIC_API_URL: "http://todo-backend:8000"
+```
+
+**Why This Matters:**
+- Kubernetes DNS resolves service names to ClusterIP
+- `todo-backend` resolves to the backend Service
+- No need for external URLs or hardcoded IPs
+- Service discovery is automatic
+
+### Authentication (Same as Phase III)
+
+**JWT authentication remains unchanged:**
+
+- Same Better Auth configuration
+- JWT cookies work across pods (stateless)
+- httpOnly, SameSite, Secure flags unchanged
+- Frontend uses `credentials: 'include'`
+
+### Resource Limits
+
+**All deployments must have resource limits:**
+
+```yaml
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "250m"
+  limits:
+    memory: "512Mi"
+    cpu: "500m"
+```
+
+**Recommended values:**
+| Component | Memory Request | Memory Limit | CPU Request | CPU Limit |
+|-----------|----------------|--------------|-------------|-----------|
+| Frontend  | 128Mi          | 256Mi        | 100m        | 200m      |
+| Backend   | 256Mi          | 512Mi        | 250m        | 500m      |
+
+### Troubleshooting Guide
+
+**Common Issues and Solutions:**
+
+| Issue | Cause | Solution |
+|-------|-------|----------|
+| `ImagePullBackOff` | Image not in Minikube | Run `eval $(minikube docker-env)` then rebuild |
+| `CrashLoopBackOff` | App crash on startup | Check logs: `kubectl logs <pod>` |
+| Pod stuck `Pending` | Resource limits too high | Reduce memory/CPU limits |
+| Service not accessible | Wrong service type | Use `minikube service <name>` |
+| Database connection failed | Wrong DATABASE_URL | Check Secret values |
+| Health probe failing | Missing health endpoint | Implement `/health` and `/ready` |
+
+**Debugging Commands:**
+
+```bash
+# Check pod status
+kubectl get pods
+
+# View pod events
+kubectl describe pod <pod-name>
+
+# View pod logs
+kubectl logs <pod-name>
+kubectl logs <pod-name> --previous  # Previous container (if crashed)
+
+# Execute command in pod
+kubectl exec -it <pod-name> -- /bin/sh
+
+# Check service endpoints
+kubectl get endpoints
+
+# Check cluster events
+kubectl get events --sort-by='.lastTimestamp'
+```
+
+---
+
+## 12. Getting Started
 
 **For Claude Code:**
 
 1. Read this file (`@CLAUDE.md`) to understand the project structure
-2. Read `@AGENTS.md` to understand agent roles and behavior (especially Section 11 for Phase III)
-3. Read `@speckit.specify` for Phase III features and requirements
-4. Read `@speckit.plan` for Phase III implementation details
+2. Read `@AGENTS.md` to understand agent roles and behavior (Section 11 for Phase III, Section 12 for Phase IV)
+3. Read `@speckit.specify` for features and requirements
+4. Read `@speckit.plan` for implementation details
 5. Read relevant specs before implementing features
 6. Follow the development workflow outlined in Section 6
 
@@ -1161,10 +1670,49 @@ async def add_task(
     - Test all edge cases
     - Verify security (user isolation, JWT auth)
 
+**For Phase IV Features (Kubernetes Deployment):**
+
+1. Read `@specs/features/containerization-*.md` for containerization specs
+2. Read `@AGENTS.md` (Section 12: Phase IV Rules)
+3. **Create Dockerfiles** (docker/frontend/, docker/backend/)
+   - Multi-stage builds for optimization
+   - Official base images (node:alpine, python:slim)
+   - Non-root user (NEVER run as root)
+   - No secrets in images
+4. **Build Images in Minikube**
+   - Run `eval $(minikube docker-env)` FIRST
+   - Build images with docker build
+   - Verify image sizes (< 500MB backend, < 200MB frontend)
+5. **Create Kubernetes Manifests** (kubernetes/)
+   - Deployments with resource limits
+   - Services (NodePort for frontend, ClusterIP for backend)
+   - ConfigMaps for non-sensitive config
+   - Secrets for DATABASE_URL, OPENAI_API_KEY
+   - Liveness and readiness probes
+6. **Create Helm Charts** (helm-charts/)
+   - Parameterize all values
+   - Lint charts: `helm lint ./helm-charts/*`
+7. **Deploy to Minikube**
+   - `helm install todo-backend ./helm-charts/backend`
+   - `helm install todo-frontend ./helm-charts/frontend`
+8. **Verify Deployment**
+   - Pods running: `kubectl get pods`
+   - Health probes passing: `kubectl describe pod <name>`
+   - Services accessible: `minikube service todo-frontend`
+9. **Test End-to-End**
+   - Frontend loads in browser
+   - User can login and manage tasks
+   - AI chatbot works correctly
+   - Data persists across pod restarts
+10. **Troubleshoot if Needed**
+    - Check logs: `kubectl logs <pod>`
+    - Describe pod: `kubectl describe pod <pod>`
+    - Use kubectl-ai: `kubectl-ai "diagnose pod issues"`
+
 ---
 
-**Project Phase:** III - AI-Powered Chatbot
-**Status:** Phase III Specification Complete, Implementation In Progress
-**Last Updated:** 2026-01-12
+**Project Phase:** IV - Local Kubernetes Deployment
+**Status:** Phase IV - Containerization & Kubernetes Deployment
+**Last Updated:** 2026-01-21
 **Development Framework:** SpecKit Plus
 **AI Assistant:** Claude Code

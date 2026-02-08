@@ -733,9 +733,109 @@ Before submitting frontend code, verify:
 
 ---
 
+## Phase IV: Kubernetes Deployment
+
+### Docker Containerization
+
+The frontend is containerized using Docker for deployment to Kubernetes:
+
+**Dockerfile Location:** `docker/frontend/Dockerfile`
+
+**Key Features:**
+- Multi-stage build for optimized image size
+- Node.js 20-alpine base image
+- Next.js standalone output mode
+- Non-root user (`nextjs`) for security
+- Image size: ~200MB
+- Production-optimized build
+
+**Building the Image:**
+
+```bash
+# Configure Docker to use Minikube's daemon (IMPORTANT!)
+eval $(minikube docker-env)
+
+# Build image
+docker build -t todo-frontend:latest -f docker/frontend/Dockerfile ./frontend
+
+# Test locally
+docker run -p 3000:3000 \
+  -e NEXT_PUBLIC_API_URL=http://localhost:8000 \
+  -e BETTER_AUTH_SECRET=your-secret \
+  todo-frontend:latest
+```
+
+### Kubernetes Deployment
+
+**Deployment Configuration:**
+- Location: `kubernetes/frontend/deployment.yaml`
+- Replicas: 2 pods
+- Image pull policy: `Never` (local images)
+- Resource limits: 256Mi memory, 200m CPU
+
+**Service Configuration:**
+- Location: `kubernetes/frontend/service.yaml`
+- Type: `NodePort` (accessible externally via Minikube)
+- Port: 3000
+
+**Health Probes:**
+```yaml
+livenessProbe:
+  httpGet:
+    path: /
+    port: 3000
+  initialDelaySeconds: 30
+  periodSeconds: 10
+
+readinessProbe:
+  httpGet:
+    path: /
+    port: 3000
+  initialDelaySeconds: 5
+  periodSeconds: 5
+```
+
+**Deploy with Helm:**
+
+```bash
+# Install Helm chart
+helm install todo-frontend ./helm-charts/frontend
+
+# Check status
+kubectl get pods -l app=todo-frontend
+kubectl logs -l app=todo-frontend
+
+# Access application
+minikube service todo-frontend
+# Opens browser automatically with tunnel URL
+```
+
+**Access Methods:**
+- **Minikube Service:** `minikube service todo-frontend` (recommended)
+- **Port Forward:** `kubectl port-forward svc/todo-frontend 3000:3000`
+- **Node Port:** Check `kubectl get svc todo-frontend` for NodePort
+
+### Backend Connection in Kubernetes
+
+The frontend communicates with the backend via Kubernetes service DNS:
+
+**Configuration:**
+- Environment variable: `NEXT_PUBLIC_API_URL=http://todo-backend:8000`
+- Backend service name: `todo-backend` (ClusterIP)
+- Kubernetes DNS automatically resolves service names
+- No need for external URLs or hardcoded IPs
+
+**How it works:**
+1. Frontend sends request to `http://todo-backend:8000/api/tasks`
+2. Kubernetes DNS resolves `todo-backend` to backend service ClusterIP
+3. Service load-balances request across backend pods
+4. Response returned to frontend pod
+
+---
+
 ## Deployment
 
-### Build for Production
+### Local Development
 
 **Note:** There is currently a known issue with the production build due to a Next.js/Turbopack bug. The development server works perfectly.
 
@@ -852,11 +952,11 @@ Educational project for learning purposes.
 
 **React 19+ | Next.js 16+ | TypeScript 5.9+ | AI Chat**
 
-**Phase:** III - AI-Powered Chatbot
+**Phase:** IV - Kubernetes Deployment
 
-**Status:** Development Ready ✅
+**Status:** Production Ready + Containerized ✅
 
-**Last Updated:** January 16, 2026
+**Last Updated:** February 9, 2026
 
 [⬆ Back to Top](#todo-manager-frontend---nextjs--ai-chat)
 

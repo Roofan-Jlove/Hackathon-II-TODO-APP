@@ -1398,6 +1398,638 @@ Before marking Phase III implementation complete, agent must verify:
 
 ---
 
+## 12. PHASE IV: CONTAINERIZATION & KUBERNETES DEPLOYMENT RULES
+
+### Purpose of Phase IV Rules
+
+Phase IV transitions the application from PaaS deployment (Vercel, Railway) to containerized Kubernetes deployment. **Security, resource management, and operational reliability are critical** - containers must be secure, properly configured, and observable.
+
+**Agents working on Phase IV MUST follow these additional rules.**
+
+---
+
+### 1. DOCKERFILE GENERATION RULES
+
+**Rule:** All Dockerfiles must follow security and optimization best practices.
+
+#### Required Patterns:
+
+**✅ REQUIRED: Multi-Stage Builds**
+
+```dockerfile
+# CORRECT - Multi-stage build for optimization
+# Stage 1: Build
+FROM node:20-alpine AS builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --only=production
+COPY . .
+RUN npm run build
+
+# Stage 2: Production
+FROM node:20-alpine AS runner
+WORKDIR /app
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+COPY --from=builder /app/.next ./.next
+COPY --from=builder /app/node_modules ./node_modules
+USER nextjs
+EXPOSE 3000
+CMD ["npm", "start"]
+```
+
+**✅ REQUIRED: Official Base Images**
+
+```dockerfile
+# CORRECT - Official slim/alpine images
+FROM node:20-alpine          # ✅ Alpine for Node.js
+FROM python:3.13-slim        # ✅ Slim for Python
+FROM nginx:alpine            # ✅ Alpine for Nginx
+
+# WRONG - Non-official or bloated images
+FROM ubuntu:latest           # ❌ Too large, not optimized
+FROM my-custom-image:latest  # ❌ Not official
+```
+
+**✅ REQUIRED: Non-Root User**
+
+```dockerfile
+# CORRECT - Run as non-root user
+RUN addgroup --system --gid 1001 appgroup
+RUN adduser --system --uid 1001 appuser
+USER appuser
+
+# WRONG - Running as root
+USER root  # ❌ NEVER in production
+```
+
+**❌ FORBIDDEN: Secrets in Images**
+
+```dockerfile
+# WRONG - Hardcoded secrets
+ENV DATABASE_URL=postgresql://user:password@host/db  # ❌ NEVER!
+ENV API_KEY=sk-1234567890                            # ❌ NEVER!
+COPY .env /app/.env                                  # ❌ NEVER!
+
+# CORRECT - Secrets via runtime injection
+ENV DATABASE_URL=""  # ✅ Injected at runtime via K8s Secrets
+```
+
+#### Agent Behavior:
+
+**If Dockerfile size > 500MB after build → Optimize:**
+
+```
+Agent must:
+1. ✅ Use multi-stage builds to separate build and runtime
+2. ✅ Use alpine/slim base images
+3. ✅ Remove unnecessary files (.git, tests, docs)
+4. ✅ Combine RUN commands to reduce layers
+5. ✅ Use .dockerignore to exclude large files
+```
+
+---
+
+### 2. KUBERNETES MANIFEST RULES
+
+**Rule:** All Kubernetes manifests must be valid, secure, and production-ready.
+
+#### Required Patterns:
+
+**✅ REQUIRED: Resource Requests and Limits**
+
+```yaml
+# CORRECT - Always define resources
+apiVersion: apps/v1
+kind: Deployment
+spec:
+  template:
+    spec:
+      containers:
+      - name: backend
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "250m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+
+# WRONG - No resource definitions
+spec:
+  containers:
+  - name: backend
+    # ❌ Missing resources - causes cluster instability!
+```
+
+**✅ REQUIRED: Liveness and Readiness Probes**
+
+```yaml
+# CORRECT - Always include health probes
+containers:
+- name: backend
+  livenessProbe:
+    httpGet:
+      path: /health
+      port: 8000
+    initialDelaySeconds: 30
+    periodSeconds: 10
+  readinessProbe:
+    httpGet:
+      path: /ready
+      port: 8000
+    initialDelaySeconds: 5
+    periodSeconds: 5
+
+# WRONG - No health probes
+containers:
+- name: backend
+  # ❌ Missing probes - causes restart loops!
+```
+
+**✅ REQUIRED: ConfigMaps for Configuration**
+
+```yaml
+# CORRECT - Use ConfigMaps
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+data:
+  LOG_LEVEL: "info"
+  CORS_ORIGINS: "https://app.example.com"
+---
+spec:
+  containers:
+  - name: backend
+    envFrom:
+    - configMapRef:
+        name: backend-config
+```
+
+**✅ REQUIRED: Secrets for Sensitive Data**
+
+```yaml
+# CORRECT - Use Secrets (base64 encoded)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: backend-secrets
+type: Opaque
+data:
+  DATABASE_URL: cG9zdGdyZXNxbDovL3VzZXI6cGFzc0Bob3N0L2Ri
+  OPENAI_API_KEY: c2stMTIzNDU2Nzg5MA==
+---
+spec:
+  containers:
+  - name: backend
+    envFrom:
+    - secretRef:
+        name: backend-secrets
+
+# WRONG - Secrets in plain text in manifests
+env:
+- name: DATABASE_URL
+  value: "postgresql://user:pass@host/db"  # ❌ NEVER!
+```
+
+**✅ REQUIRED: Standard Labels**
+
+```yaml
+# CORRECT - Follow Kubernetes labeling best practices
+metadata:
+  labels:
+    app.kubernetes.io/name: todo-backend
+    app.kubernetes.io/instance: todo-backend-prod
+    app.kubernetes.io/version: "1.0.0"
+    app.kubernetes.io/component: api
+    app.kubernetes.io/part-of: todo-app
+    app.kubernetes.io/managed-by: helm
+```
+
+#### Agent Behavior:
+
+**All manifests MUST pass validation:**
+
+```bash
+# Agent must run before committing
+kubectl apply --dry-run=client -f manifest.yaml
+```
+
+---
+
+### 3. HELM CHART RULES
+
+**Rule:** Helm charts must follow standard structure and be fully parameterized.
+
+#### Required Structure:
+
+```
+helm-charts/
+├── todo-app/
+│   ├── Chart.yaml           # Chart metadata (required)
+│   ├── values.yaml          # Default values (required)
+│   ├── values-dev.yaml      # Dev environment overrides
+│   ├── values-staging.yaml  # Staging environment overrides
+│   ├── values-prod.yaml     # Production environment overrides
+│   └── templates/
+│       ├── _helpers.tpl     # Template helpers
+│       ├── deployment.yaml  # Deployment template
+│       ├── service.yaml     # Service template
+│       ├── configmap.yaml   # ConfigMap template
+│       ├── secret.yaml      # Secret template
+│       ├── ingress.yaml     # Ingress template
+│       └── hpa.yaml         # HorizontalPodAutoscaler
+```
+
+**✅ REQUIRED: Parameterized Values**
+
+```yaml
+# values.yaml - All configurable values
+replicaCount: 2
+
+image:
+  repository: todo-backend
+  tag: "1.0.0"
+  pullPolicy: IfNotPresent
+
+resources:
+  requests:
+    memory: "256Mi"
+    cpu: "250m"
+  limits:
+    memory: "512Mi"
+    cpu: "500m"
+
+# templates/deployment.yaml - Uses values
+spec:
+  replicas: {{ .Values.replicaCount }}
+  containers:
+  - image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+    resources:
+      {{- toYaml .Values.resources | nindent 12 }}
+```
+
+**✅ REQUIRED: Semantic Versioning**
+
+```yaml
+# Chart.yaml
+apiVersion: v2
+name: todo-app
+version: 1.0.0        # Chart version (SemVer)
+appVersion: "1.0.0"   # Application version
+```
+
+#### Agent Behavior:
+
+**If helm install fails → Debug and Fix:**
+
+```bash
+# Agent must run these commands
+helm lint ./helm-charts/todo-app
+helm template ./helm-charts/todo-app --debug
+helm install todo-app ./helm-charts/todo-app --dry-run --debug
+```
+
+---
+
+### 4. DEPLOYMENT VERIFICATION RULES
+
+**Rule:** Agents MUST verify deployments are healthy before marking tasks complete.
+
+#### Required Verification Steps:
+
+**✅ Step 1: Verify Pods Running**
+
+```bash
+# Agent must verify pods reach Running state
+kubectl get pods -l app=todo-backend
+# Expected: STATUS = Running, READY = 1/1
+
+# If pods not running, check events
+kubectl describe pod <pod-name>
+kubectl logs <pod-name>
+```
+
+**✅ Step 2: Verify Health Probes Pass**
+
+```bash
+# Agent must verify health endpoints respond
+kubectl exec <pod-name> -- curl -s http://localhost:8000/health
+# Expected: {"status": "healthy"}
+
+kubectl exec <pod-name> -- curl -s http://localhost:8000/ready
+# Expected: {"status": "ready"}
+```
+
+**✅ Step 3: Verify Services Accessible**
+
+```bash
+# Agent must verify service routing
+kubectl get svc todo-backend
+kubectl port-forward svc/todo-backend 8000:8000
+
+# Test service responds
+curl http://localhost:8000/api/health
+```
+
+**✅ Step 4: Test End-to-End Application Flow**
+
+```bash
+# Agent must verify full application flow
+# 1. Frontend loads
+# 2. User can register/login
+# 3. User can create/list tasks
+# 4. AI chatbot responds (Phase III features)
+```
+
+#### Agent Behavior:
+
+**If deployment fails → Troubleshoot:**
+
+```
+Agent must:
+1. ✅ Check pod status: kubectl get pods
+2. ✅ Check pod events: kubectl describe pod <name>
+3. ✅ Check pod logs: kubectl logs <name>
+4. ✅ Check service endpoints: kubectl get endpoints
+5. ✅ Check resource quotas: kubectl describe quota
+6. ✅ Fix issue and redeploy
+7. ✅ Verify fix works
+```
+
+---
+
+### 5. AI-OPS TOOL USAGE
+
+**Rule:** When AI-powered Kubernetes tools are available, agents SHOULD use them for enhanced productivity.
+
+#### Docker AI (Gordon)
+
+**When available, use Gordon for:**
+
+```bash
+# Dockerfile generation
+docker ai "Create a Dockerfile for a FastAPI Python application"
+
+# Image optimization
+docker ai "Optimize this Dockerfile for smaller image size"
+
+# Troubleshooting
+docker ai "Why is my container failing to start?"
+```
+
+#### kubectl-ai
+
+**When available, use kubectl-ai for:**
+
+```bash
+# Deployment commands
+kubectl-ai "Deploy the todo-backend with 3 replicas"
+
+# Troubleshooting
+kubectl-ai "Why are my pods in CrashLoopBackOff?"
+
+# Resource inspection
+kubectl-ai "Show me all pods using more than 500Mi memory"
+```
+
+#### Kagent
+
+**When available, use Kagent for:**
+
+```bash
+# Cluster analysis
+kagent analyze cluster
+
+# Resource optimization
+kagent optimize deployments
+
+# Cost analysis
+kagent cost-report
+```
+
+#### Agent Behavior:
+
+```
+If AI-Ops tool available:
+1. ✅ Use tool for initial generation/analysis
+2. ✅ Review and validate output
+3. ✅ Ensure output follows AGENTS.md rules
+4. ✅ Test before committing
+
+If AI-Ops tool not available:
+1. ✅ Use manual kubectl/helm commands
+2. ✅ Follow standard Kubernetes practices
+3. ✅ Reference official documentation
+```
+
+---
+
+### 6. PROHIBITED PATTERNS IN PHASE IV
+
+**Agents MUST NOT create these patterns. If found, STOP and revise.**
+
+#### ❌ PROHIBITED: Hardcoded Secrets in Dockerfiles
+
+```dockerfile
+# WRONG - Secrets in Dockerfile
+ENV DATABASE_URL=postgresql://user:password@host/db
+COPY .env /app/.env
+ARG API_KEY=sk-1234567890
+```
+
+**Why prohibited:** Secrets exposed in image layers, visible in registry.
+
+---
+
+#### ❌ PROHIBITED: Running Containers as Root
+
+```dockerfile
+# WRONG - No USER directive (runs as root)
+FROM python:3.13-slim
+WORKDIR /app
+COPY . .
+CMD ["python", "main.py"]
+# ❌ Runs as root - security vulnerability!
+```
+
+**Why prohibited:** Root access enables container escape attacks.
+
+---
+
+#### ❌ PROHIBITED: Missing Resource Limits
+
+```yaml
+# WRONG - No resource limits
+spec:
+  containers:
+  - name: backend
+    image: todo-backend:latest
+    # ❌ No resources defined - can consume all cluster resources!
+```
+
+**Why prohibited:** Causes cluster instability, affects other workloads.
+
+---
+
+#### ❌ PROHIBITED: Missing Health Probes
+
+```yaml
+# WRONG - No health probes
+spec:
+  containers:
+  - name: backend
+    image: todo-backend:latest
+    ports:
+    - containerPort: 8000
+    # ❌ No liveness/readiness probes - undetected failures!
+```
+
+**Why prohibited:** Kubernetes can't detect unhealthy pods, causes cascading failures.
+
+---
+
+#### ❌ PROHIBITED: Imperative kubectl in Production
+
+```bash
+# WRONG - Imperative commands
+kubectl run backend --image=todo-backend:latest
+kubectl expose deployment backend --port=8000
+kubectl scale deployment backend --replicas=3
+# ❌ Not reproducible, not version controlled!
+```
+
+**Why prohibited:** Changes not tracked, can't reproduce environment.
+
+---
+
+#### ❌ PROHIBITED: Development Dependencies in Production
+
+```dockerfile
+# WRONG - Dev dependencies in production image
+FROM python:3.13-slim
+COPY requirements.txt .
+RUN pip install -r requirements.txt  # ❌ Includes pytest, black, etc.
+
+# CORRECT - Production only
+RUN pip install --no-cache-dir -r requirements-prod.txt
+```
+
+**Why prohibited:** Larger image size, potential security vulnerabilities.
+
+---
+
+### 7. REQUIRED TESTING FOR KUBERNETES
+
+**Agents MUST verify these scenarios before marking Phase IV tasks complete.**
+
+#### Docker Image Tests:
+
+```bash
+# Test 1: Image builds successfully
+docker build -t todo-backend:test .
+# Expected: Build completes without errors
+
+# Test 2: Image size is reasonable
+docker images todo-backend:test --format "{{.Size}}"
+# Expected: < 500MB for backend, < 200MB for frontend
+
+# Test 3: Container runs locally
+docker run -d -p 8000:8000 --name test-backend todo-backend:test
+curl http://localhost:8000/health
+# Expected: {"status": "healthy"}
+
+# Test 4: Container runs as non-root
+docker exec test-backend whoami
+# Expected: NOT "root"
+```
+
+#### Kubernetes Deployment Tests:
+
+```bash
+# Test 1: Pods start successfully
+kubectl apply -f manifests/
+kubectl wait --for=condition=Ready pod -l app=todo-backend --timeout=120s
+# Expected: pod/todo-backend-xxx condition met
+
+# Test 2: Health probes pass
+kubectl get pods -l app=todo-backend
+# Expected: READY 1/1, STATUS Running
+
+# Test 3: Services accessible
+kubectl port-forward svc/todo-backend 8000:8000 &
+curl http://localhost:8000/health
+# Expected: {"status": "healthy"}
+
+# Test 4: Logs show no errors
+kubectl logs -l app=todo-backend --tail=100
+# Expected: No ERROR or CRITICAL logs
+```
+
+#### End-to-End Application Tests:
+
+```bash
+# Test 1: Frontend loads
+curl http://localhost:3000
+# Expected: HTML response
+
+# Test 2: API responds
+curl http://localhost:8000/api/health
+# Expected: {"status": "healthy"}
+
+# Test 3: Authentication works
+curl -X POST http://localhost:8000/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "test@example.com", "password": "password"}'
+# Expected: JWT token in response
+
+# Test 4: Full workflow (if AI chatbot enabled)
+# - Create user
+# - Login
+# - Create task via API
+# - Create task via chatbot
+# - Verify tasks in database
+```
+
+#### Agent Testing Checklist:
+
+Before marking Phase IV implementation complete, agent must verify:
+
+- [ ] Docker images build successfully
+- [ ] Docker images are optimized (< 500MB backend, < 200MB frontend)
+- [ ] Containers run as non-root user
+- [ ] No secrets in Docker images
+- [ ] Kubernetes manifests pass validation (--dry-run)
+- [ ] Pods reach Running state
+- [ ] Health probes pass
+- [ ] Services are accessible
+- [ ] Helm charts lint successfully
+- [ ] Helm install works (--dry-run)
+- [ ] End-to-end application flow works
+- [ ] Logs show no critical errors
+
+---
+
+### Phase IV Agent Contract
+
+**By implementing Phase IV features, agents agree to:**
+
+1. ✅ **Multi-stage builds ALWAYS** - Optimize Docker images
+2. ✅ **Non-root users ALWAYS** - Never run containers as root
+3. ✅ **No secrets in images** - Use K8s Secrets at runtime
+4. ✅ **Resource limits ALWAYS** - Define requests and limits
+5. ✅ **Health probes ALWAYS** - Liveness and readiness required
+6. ✅ **Declarative YAML only** - No imperative kubectl in production
+7. ✅ **Validate before commit** - --dry-run all manifests
+8. ✅ **Verify deployments** - Pods running, probes passing
+9. ✅ **Test end-to-end** - Full application workflow verified
+10. ✅ **Use AI-Ops tools** - When available, for productivity
+
+**Remember:** Phase IV security and reliability practices are NON-NEGOTIABLE. If an agent creates insecure or unreliable configurations, they MUST be rejected and rewritten.
+
+---
+
 ## Summary: The Agent Contract
 
 By working on this project, AI agents agree to:
@@ -1415,8 +2047,9 @@ By working on this project, AI agents agree to:
 
 ---
 
-**Project:** Phase II-III - Full-Stack Web Application with AI Chatbot
+**Project:** Phase II-IV - Full-Stack Web Application with AI Chatbot & Kubernetes Deployment
 **Framework:** SpecKit Plus
-**Last Updated:** 2026-01-12
+**Last Updated:** 2026-01-21
 **Phase III Critical:** Stateless architecture, user_id filtering, conversation persistence
+**Phase IV Critical:** Multi-stage Docker builds, non-root containers, resource limits, health probes
 **Compliance:** Mandatory for all AI agents
